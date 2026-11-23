@@ -1,13 +1,6 @@
-"use client";
-
-import React from 'react';
-
-const useUser = () => {
-  return (
-    <div className="p-4 border border-gray-700 rounded bg-bet9ja-card">
-      <p className="text-gray-300">useUser Component</p>
-    </div>
-  );
+export const useUser = () => {
+  return {
+    user: null,
+    isLoading: false,
+  };
 };
-
-export default useUser;
