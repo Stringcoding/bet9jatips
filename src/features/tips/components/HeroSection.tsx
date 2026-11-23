@@ -3,7 +3,8 @@
 import React from "react";
 import CountUp from "react-countup";
 import Link from "next/link";
-import { Search, Gift, ShieldCheck } from "lucide-react";
+import Image from "next/image";
+import { Search, Gift } from "lucide-react";
 
 const HeroSection = () => {
   return (
@@ -53,24 +54,21 @@ const HeroSection = () => {
         </div>
       </div>
 
-      {/* Right Image / Graphic Area */}
+      {/* Right Image Area */}
       <div className="flex-1 flex justify-center items-center relative w-full h-[400px] lg:h-[600px]">
-        {/* Glow Effects */}
+        {/* Glow Effects behind the image */}
         <div className="absolute z-0 w-[80%] h-[80%] rounded-full glow-green top-10 right-10 opacity-50" />
         <div className="absolute z-0 w-[50%] h-[50%] rounded-full glow-yellow bottom-10 left-10 opacity-30" />
 
-        {/* Image Placeholder (Replace with your actual hero image) */}
-        <div className="relative z-10 w-full h-full flex items-center justify-center bg-bg-slate rounded-3xl shadow-2xl border border-gray-700/50 overflow-hidden">
-           <div className="flex flex-col items-center text-center p-8">
-              <ShieldCheck className="w-24 h-24 text-brand-green mb-4" />
-              <h3 className="text-2xl font-bold text-surface-white">135+ Odds</h3>
-              <p className="text-text-muted mt-2">Verified Winning Tickets</p>
-           </div>
-           
-           {/* Floating Neumorphic Badge */}
-           <div className="absolute -top-4 -right-4 bg-brand-green text-surface-white font-extrabold p-4 rounded-full shadow-lg transform rotate-12 border-4 border-bg-deep">
-              <span className="text-2xl">100%</span><br/><span className="text-xs">Sure</span>
-           </div>
+        {/* The Hero Image */}
+        <div className="relative z-10 w-full h-full flex items-center justify-center">
+          <Image
+            src="/hero-image.png"
+            alt="Bet9ja Winning Tickets"
+            fill
+            className="object-contain drop-shadow-2xl"
+            priority
+          />
         </div>
       </div>
 
