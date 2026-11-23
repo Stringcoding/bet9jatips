@@ -1,13 +1,116 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --color-bet9ja-green: #008d44;
-  --color-bet9ja-dark: #1e2226;
-  --color-bet9ja-card: #2c333a;
-  --color-bet9ja-gray: #9ca3af;
+  /* =======================================================================
+     LOCKED BRAND THEME (STRICTLY NO LIGHT MODE)
+     ======================================================================= */
+  
+  /* Brand Colors */
+  --color-brand-green: #2A9D48;
+  --color-brand-green-dark: #1E7A36;
+  --color-brand-yellow: #FDB913;
+  --color-brand-red: #E31E24;
+
+  /* Surfaces & Backgrounds */
+  --color-bg-deep: #1E2124;
+  --color-bg-slate: #2C3035;
+  --color-surface-light: #F4F5F7;
+  --color-surface-white: #FFFFFF;
+
+  /* Typography */
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --color-text-primary: #FFFFFF;
+  --color-text-muted: #A1A1AA;
+
+  /* =======================================================================
+     CUSTOM GRADIENTS & EFFECTS (Converted from old CSS)
+     ======================================================================= */
+  
+  /* Updated to use your brand green (#2A9D48) instead of legacy greens */
+  --background-image-black-gradient: linear-gradient(144.39deg, #ffffff -278.56%, #373A45 -78.47%, #2A9D48 91.61%);
+  --background-image-black-gradient-2: linear-gradient(-168.39deg, #ffffff -278.56%, #37453f -78.47%, #2A9D48 91.61%);
+  --background-image-gray-gradient: linear-gradient(153.47deg, rgba(42, 157, 72, 0.21) -341.94%, #2A9D48 95.11%);
+  --background-image-discount-gradient: linear-gradient(125.17deg, #373A45 0%, #1E7A36 100%);
+  
+  /* Button Gradient */
+  --background-image-brand-gradient: linear-gradient(157.81deg, #2A9D48 -43.27%, #1E7A36 90.29%);
+
+  /* Shadows */
+  --shadow-card: 0px 20px 100px -10px rgba(66, 71, 91, 0.1);
+  --shadow-brand: 0px 20px 100px -10px rgba(42, 157, 72, 0.15);
 }
 
-body {
-  background-color: var(--color-bet9ja-dark);
-  color: white;
+/* =======================================================================
+   GLOBAL BASE STYLES
+   ======================================================================= */
+@layer base {
+  * {
+    scroll-behavior: smooth;
+    font-family: var(--font-sans); 
+  }
+
+  body {
+    background-color: var(--color-bg-deep);
+    color: var(--color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* =======================================================================
+   CUSTOM UTILITIES & ANIMATIONS
+   ======================================================================= */
+@layer utilities {
+  
+  /* Text Gradient (Updated to Brand Green) */
+  .text-gradient {
+    background: radial-gradient(
+      64.18% 64.18% at 71.16% 35.69%,
+      #2A9D48 0.89%,
+      #2A9D48 17.23%,
+      #1E7A36 55.12%,
+      #1E7A36 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+  }
+
+  /* Ambient Glows (Mapped to Brand Green & Yellow) */
+  .glow-green {
+    background: linear-gradient(180deg, rgba(42, 157, 72, 0) 0%, #2A9D48 100%);
+    filter: blur(123px);
+  }
+
+  .glow-yellow {
+    background: linear-gradient(90deg, rgba(253, 185, 19, 0.2) 0%, #FDB913 100%);
+    filter: blur(900px);
+  }
+
+  .white__gradient {
+    background: rgba(255, 255, 255, 0.6);
+    filter: blur(750px);
+  }
+
+  /* Card Hover Effects */
+  .feature-card-hover {
+    transition: all 0.3s ease;
+  }
+  
+  .feature-card-hover:hover {
+    background: var(--background-image-black-gradient);
+    box-shadow: var(--shadow-brand);
+  }
+
+  /* Sidebar Slide Animation */
+  .sidebar {
+    animation: slide-top 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  }
+
+  @keyframes slide-top {
+    0% { transform: translateY(100px); }
+    100% { transform: translateY(0); }
+  }
 }
