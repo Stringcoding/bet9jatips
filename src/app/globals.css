@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bet9ja-green: #008d44;
+  --color-bet9ja-dark: #1e2226;
+  --color-bet9ja-card: #2c333a;
+  --color-bet9ja-gray: #9ca3af;
+}
+
+body {
+  background-color: var(--color-bet9ja-dark);
+  color: white;
+}
