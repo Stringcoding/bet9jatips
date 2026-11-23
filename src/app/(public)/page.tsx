@@ -1,16 +1,53 @@
-"use client";
+import HeroSection from "@/features/tips/components/HeroSection";
+import TipCard from "@/features/tips/components/TipCard";
+import MatchList from "@/features/tips/components/MatchList";
+import { Flame, TrendingUp } from "lucide-react";
 
-import React from 'react';
-
-const HomePage = () => {
+export default function HomePage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-      <div className="bg-bet9ja-card p-8 rounded-lg border border-gray-600 shadow-xl max-w-md w-full">
-        <h1 className="text-2xl font-bold text-white mb-4">Site Construction Ongoing</h1>
-        <p className="text-gray-400">This section is currently under development.</p>
-      </div>
-    </div>
-  );
-};
+    <main className="min-h-screen pb-20">
+      {/* 1. Hero Section */}
+      <HeroSection />
 
-export default HomePage;
+      {/* 2. Recent Tips Section */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <div className="flex items-center gap-2 mb-8">
+          <Flame className="text-brand-red w-8 h-8" />
+          <h2 className="text-3xl font-extrabold text-surface-white">Recent Tips</h2>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Sample Data */}
+          <TipCard 
+            user="Mrgsports" 
+            odds="62.84" 
+            date="23/11/2026 18:21" 
+            code="62HXPN6" 
+          />
+          <TipCard 
+            user="iamjeffre_real" 
+            odds="124.97" 
+            date="23/11/2026 18:16" 
+            code="62HXFDL" 
+          />
+          <TipCard 
+            user="SureBanker" 
+            odds="14.50" 
+            date="23/11/2026 17:00" 
+            code="99KLM2X" 
+          />
+        </div>
+      </section>
+
+      {/* 3. Matches / Leagues Section */}
+      <section className="max-w-7xl mx-auto px-6 py-12">
+        <div className="flex items-center gap-2 mb-8">
+          <TrendingUp className="text-brand-green w-8 h-8" />
+          <h2 className="text-3xl font-extrabold text-surface-white">Today's Top Odds</h2>
+        </div>
+        
+        <MatchList />
+      </section>
+    </main>
+  );
+}
