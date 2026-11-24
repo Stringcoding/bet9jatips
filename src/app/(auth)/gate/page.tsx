@@ -16,9 +16,7 @@ export default function GatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // 1. PREVENT BACK BUTTON BYPASS
   useEffect(() => {
-    // If user hits back button, clear the gate token so they are forced to re-verify
     window.history.pushState(null, "", window.location.href);
     const handlePopState = () => {
       document.cookie = "gate_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -42,8 +40,7 @@ export default function GatePage() {
       setLoading(false);
     } else {
       setStep(2);
-      // 2. CLEAR THE ID NUMBER FOR STEP 2
-      setIdNumber(""); 
+      setIdNumber(""); // Clear the ID for Step 2
       setLoading(false);
     }
   };
@@ -77,7 +74,6 @@ export default function GatePage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/10 rounded-full blur-3xl" />
 
         <div className="flex flex-col items-center mb-8 relative z-10">
-          {/* 3. REPLACED SHIELD WITH LOGO */}
           <div className="relative h-12 w-40 mb-4">
              <Image 
                src="/logo.png" 
@@ -156,16 +152,11 @@ export default function GatePage() {
               />
             </div>
 
-            <div className="flex gap-3 mt-4">
-              <button type="button" onClick={() => { setStep(1); setIdNumber(""); }} 
-                className="w-1/3 bg-bg-deep hover:bg-gray-800 text-surface-white font-bold py-3 rounded-xl transition-colors border border-gray-700">
-                Back
-              </button>
-              <button type="submit" disabled={loading}
-                className="w-2/3 bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
-              </button>
-            </div>
+            {/* FULL WIDTH BUTTON ONLY */}
+            <button type="submit" disabled={loading}
+              className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
+            </button>
           </form>
         )}
 
