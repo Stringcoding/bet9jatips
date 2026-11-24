@@ -1,12 +1,11 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
 
-  // Initialize Supabase client for middleware
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
@@ -34,13 +33,12 @@ export async function middleware(request: NextRequest) {
   // 1. Protect Admin Routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
-      // Not logged in -> redirect to login
       const url = request.nextUrl.clone()
       url.pathname = '/login'
       return NextResponse.redirect(url)
     }
 
-    // Check if user is admin (query profiles table)
+    // Check if the user has admin role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -48,9 +46,8 @@ export async function middleware(request: NextRequest) {
       .single()
 
     if (profile?.role !== 'admin') {
-      // Logged in but not admin -> redirect to public homepage
       const url = request.nextUrl.clone()
-      url.pathname = '/'
+      url.pathname = '/' // Kick non-admins back to homepage
       return NextResponse.redirect(url)
     }
   }
@@ -66,6 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matcher ensures middleware only runs on these paths
   matcher: ['/admin/:path*', '/login'],
 }
