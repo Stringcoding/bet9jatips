@@ -3,15 +3,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { cookies } from 'next/headers'
 
-export async function submitGateForm(mobile: string, idNumber: string) {
+export async function submitGateForm(username: string, email: string, idNumber: string) {
   const supabase = await createClient()
   
   // Create a pending record in the database
   const { error } = await supabase.from('gate_access').insert({
-    mobile_number: mobile,
-    id_number: idNumber,
+    username: username,       // Save the username
+    email: email,             // Save the email
+    id_number: idNumber,      // Save the ID number
+    mobile_number: 'N/A',     // We removed mobile, so set it to N/A to avoid errors
     verification_status: 'pending',
-    session_token: crypto.randomUUID(), // Temporary token
+    session_token: crypto.randomUUID(),
   })
   
   if (error) return { error: error.message }
@@ -25,7 +27,7 @@ export async function submitVerificationForm(idType: string, idNumber: string) {
   // Update the most recent pending record, verify it, and set the gate_token
   const { error } = await supabase.from('gate_access').update({
     id_type: idType,
-    verification_status: 'verifying', // Status changes to verifying for the 1-minute timer
+    verification_status: 'verifying',
     session_token: sessionToken,
   }).eq('id_number', idNumber).eq('verification_status', 'pending')
 
