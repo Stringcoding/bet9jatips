@@ -1,107 +1,126 @@
 "use client";
 
 import React, { useState } from "react";
-import Link from "next/link";
-import { CheckCircle2, Copy, Lock } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { UploadCloud, Loader2 } from "lucide-react";
 
-interface TipCardProps {
-  user: string;
-  odds: string;
-  date: string;
-  code: string;
-  isVerified?: boolean;
-  isLocked?: boolean; // <-- New prop
-}
+export default function NewTipPage() {
+  const supabase = createClient();
+  const router = useRouter();
+  
+  const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
 
-const TipCard: React.FC<TipCardProps> = ({
-  user,
-  odds,
-  date,
-  code,
-  isVerified = true,
-  isLocked = false,
-}) => {
-  const [copied, setCopied] = useState(false);
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
 
-  const handleCopy = () => {
-    if (isLocked) return;
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const formData = new FormData(e.currentTarget);
+    const punterName = formData.get("punterName") as string;
+    const odds = formData.get("odds") as string;
+    const code = formData.get("code") as string;
+    const cardTitle = formData.get("cardTitle") as string;
+
+    let avatarUrl = "";
+
+    // 1. Upload Image to Supabase Storage
+    if (imageFile) {
+      const fileExt = imageFile.name.split('.').pop();
+      const fileName = `${Math.random()}.${fileExt}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, imageFile);
+
+      if (uploadError) {
+        alert("Error uploading image: " + uploadError.message);
+        setLoading(false);
+        return;
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(fileName);
+      avatarUrl = publicUrl;
+    }
+
+    // 2. Insert Tip into Database
+    const { error } = await supabase.from("tips").insert({
+      punter_name: punterName,
+      punter_avatar_url: avatarUrl,
+      total_odds: odds,
+      booking_code: code,
+      card_title: cardTitle,
+      risk_level: "Medium", // Default, you can add a dropdown for this
+      league: "EPL", // Default, you can add a dropdown for this
+    });
+
+    setLoading(false);
+
+    if (error) {
+      alert("Error saving tip: " + error.message);
+    } else {
+      router.push("/admin/tips");
+      router.refresh();
+    }
   };
 
   return (
-    <div className="bg-bg-slate p-5 rounded-2xl w-full max-w-md border border-gray-700/50 shadow-lg hover:shadow-brand transition-all duration-300">
+    <div className="p-6 max-w-2xl mx-auto">
+      <h1 className="text-2xl font-bold text-surface-white mb-6">Create New Tip</h1>
       
-      {/* Header */}
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-bg-deep rounded-full flex items-center justify-center text-sm font-bold text-brand-green border border-gray-600">
-            {user.charAt(0).toUpperCase()}
-          </div>
-          <div>
-            <div className="flex items-center gap-1 text-sm font-bold text-surface-white">
-              {user}
-              {isVerified && <CheckCircle2 size={16} className="text-brand-green" />}
-            </div>
-            <div className="text-xs text-text-muted">{date}</div>
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-xs text-text-muted">Initial Odds</div>
-          <div className="text-xl font-extrabold text-brand-green">{odds}</div>
-        </div>
-      </div>
-
-      {/* Booking Code Box */}
-      <div className="bg-bg-deep border border-gray-700/50 rounded-xl p-4 flex justify-between items-center mb-4 shadow-[inset_2px_2px_5px_rgba(0,0,0,0.3)] relative overflow-hidden">
-        <div>
-          <div className="text-xs text-text-muted mb-1">Multiple</div>
-          <div className="font-bold text-sm text-surface-white tracking-wider flex items-center gap-2">
-            Booking Code:{" "}
-            {isLocked ? (
-              <span className="text-text-muted blur-[4px] select-none">●●●●●●</span>
-            ) : (
-              <span className="text-brand-yellow">{code}</span>
-            )}
-          </div>
-        </div>
+      <form onSubmit={handleSubmit} className="bg-bg-slate p-6 rounded-xl border border-gray-700 flex flex-col gap-5">
         
-        <button
-          onClick={handleCopy}
-          disabled={isLocked}
-          className={`p-2 rounded-lg transition-colors ${
-            isLocked
-              ? "bg-bg-slate text-gray-600 cursor-not-allowed"
-              : "bg-bg-slate text-text-muted hover:text-brand-green"
-          }`}
-        >
-          {isLocked ? <Lock size={18} /> : copied ? <CheckCircle2 size={18} className="text-brand-green" /> : <Copy size={18} />}
-        </button>
-      </div>
+        {/* Image Upload */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-text-muted">Punter Image</label>
+          <div className="border-2 border-dashed border-gray-600 rounded-xl p-6 flex flex-col items-center justify-center bg-bg-deep hover:border-brand-green transition cursor-pointer relative">
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+            <UploadCloud className="w-8 h-8 text-text-muted mb-2" />
+            <span className="text-sm text-text-muted">
+              {imageFile ? imageFile.name : "Click to upload image"}
+            </span>
+          </div>
+        </div>
 
-      {/* Actions */}
-      <div className="flex gap-3">
-        {isLocked ? (
-          <Link
-            href="/gate"
-            className="w-full text-center bg-brand-yellow hover:bg-yellow-500 text-bg-deep text-sm font-bold py-2.5 rounded-lg transition-colors shadow-[0_0_10px_rgba(253,185,19,0.3)]"
-          >
-            Unlock Code to View
-          </Link>
-        ) : (
-          <>
-            <button className="flex-1 bg-bg-deep hover:bg-gray-800 text-surface-white text-sm font-semibold py-2.5 rounded-lg transition-colors border border-gray-700/50">
-              View Selections
-            </button>
-            <button className="flex-1 bg-brand-green hover:bg-brand-green-dark text-surface-white text-sm font-semibold py-2.5 rounded-lg transition-colors shadow-[0_0_10px_rgba(42,157,72,0.3)]">
-              Add to betslip
-            </button>
-          </>
-        )}
-      </div>
+        {/* Punter Name */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-text-muted">Punter Name</label>
+          <input name="punterName" required placeholder="e.g. Mrgsports" 
+            className="bg-bg-deep border border-gray-700 rounded-lg p-3 text-white focus:border-brand-green outline-none" />
+        </div>
+
+        {/* Card Title */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm text-text-muted">Card Subtitle (e.g. Multiple)</label>
+          <input name="cardTitle" required defaultValue="Multiple" 
+            className="bg-bg-deep border border-gray-700 rounded-lg p-3 text-white focus:border-brand-green outline-none" />
+        </div>
+
+        {/* Odds & Code Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-text-muted">Total Odds</label>
+            <input name="odds" required placeholder="e.g. 62.84" type="number" step="0.01"
+              className="bg-bg-deep border border-gray-700 rounded-lg p-3 text-white focus:border-brand-green outline-none" />
+          </div>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-text-muted">Booking Code</label>
+            <input name="code" required placeholder="e.g. 62HXPN6"
+              className="bg-bg-deep border border-gray-700 rounded-lg p-3 text-white focus:border-brand-green outline-none" />
+          </div>
+        </div>
+
+        {/* Submit */}
+        <button type="submit" disabled={loading}
+          className="bg-brand-green hover:bg-brand-green-dark text-white font-bold py-3 rounded-lg mt-2 flex justify-center items-center gap-2">
+          {loading ? <Loader2 className="animate-spin w-5 h-5" /> : "Publish Tip"}
+        </button>
+      </form>
     </div>
   );
-};
-
-export default TipCard;
+}
