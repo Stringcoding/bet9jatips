@@ -8,7 +8,7 @@ import TipCard from "@/features/tips/components/TipCard";
 import { Flame } from "lucide-react";
 import Link from "next/link";
 
-// CRITICAL: Tell Next.js not to cache this page
+// ADD THIS LINE TO FORCE FRESH DATA
 export const dynamic = 'force-dynamic';
 
 export default async function HomePage() {
@@ -28,13 +28,15 @@ export default async function HomePage() {
     hasAccess = !!data;
   }
 
-  // Fetch fresh data
+  // Ensure we are selecting all fields and fetching
   const { data: tips, error } = await supabase
     .from("tips")
     .select("*")
     .eq("is_active", true)
     .order("created_at", { ascending: false })
     .limit(3);
+
+  console.log("Fetched Tips:", tips); // Optional: Check your Vercel logs to see if data is actually returning
 
   return (
     <main className="min-h-screen pb-20 overflow-x-hidden">
