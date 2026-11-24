@@ -15,13 +15,7 @@ export default function HomePage() {
       {/* 2. Infinite Horizontal Scroll Ticker */}
       <InfiniteTicker />
 
-      {/* 3. How It Works Section */}
-      <HowItWorks />
-
-      {/* 4. Top Tipsters Leaderboard Section */}
-      <TopTipsters />
-
-      {/* 5. Recent Tips Section */}
+       {/* 5. Recent Tips Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex items-center gap-2 mb-8">
           <Flame className="text-brand-red w-8 h-8" />
@@ -50,6 +44,14 @@ export default function HomePage() {
           />
         </div>
       </section>
+
+      {/* 3. How It Works Section */}
+      <HowItWorks />
+
+      {/* 4. Top Tipsters Leaderboard Section */}
+      <TopTipsters />
+
+     
 
     </main>
   );
