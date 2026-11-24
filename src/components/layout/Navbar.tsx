@@ -12,7 +12,7 @@ const Navbar = () => {
         
         {/* Logo Area */}
         <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="relative h-8 sm:h-10 w-32 sm:w-40">
+          <div className="relative h-8 sm:h-10 w-40 sm:w-40">
             <Image
               src="/logo.png"
               alt="Bet9ja Tips"
