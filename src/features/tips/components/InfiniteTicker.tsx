@@ -9,13 +9,12 @@ interface WinningTicket {
   odds: number;
   stake: number;
   return_amount: number;
-  booking_code: string;
+  booking_code: string; // Keeping the DB column name, but UI says Bet ID
   time: string;
 }
 
-// THIS IS THE MISSING COMPONENT
 const TicketCard = ({ odds, stake, returnAmt, time, code }: any) => (
-  <div className="shrink-0 w-[280px] sm:w-[300px] bg-bg-slate/80 backdrop-blur-sm border border-brand-green/30 rounded-xl p-4 mx-3 shadow-[0_0_15px_rgba(42,157,72,0.15)] flex flex-col gap-3">
+  <div className="shrink-0 w-[280px] sm:w-[320px] bg-bg-slate/80 backdrop-blur-sm border border-brand-green/30 rounded-xl p-4 mx-3 shadow-[0_0_15px_rgba(42,157,72,0.15)] flex flex-col gap-3">
     
     {/* Header */}
     <div className="flex justify-between items-center border-b border-gray-700/50 pb-2">
@@ -49,15 +48,17 @@ const TicketCard = ({ odds, stake, returnAmt, time, code }: any) => (
       </div>
     </div>
 
-    {/* Booking Code */}
-    <div className="bg-bg-deep border border-gray-700/50 rounded-lg py-2 px-3 flex justify-between items-center">
-      <span className="text-text-muted text-[10px] uppercase font-bold">Code</span>
-      <span className="text-brand-yellow font-mono font-bold text-sm">{code}</span>
+    {/* Bet ID Area */}
+    <div className="bg-bg-deep border border-gray-700/50 rounded-lg py-2 px-3 flex flex-col gap-0.5">
+      <span className="text-text-muted text-[10px] uppercase font-bold">Bet ID</span>
+      <span className="text-brand-yellow font-mono text-[11px] sm:text-xs font-bold tracking-tight break-all">
+        {code}
+      </span>
     </div>
 
     {/* Footer */}
     <div className="flex items-center gap-2 mt-1">
-      <div className="w-4 h-4 rounded-full bg-brand-green flex items-center justify-center">
+      <div className="w-4 h-4 rounded-full bg-brand-green flex items-center justify-center shrink-0">
          <CheckCircle2 className="text-bg-deep w-3 h-3" />
       </div>
       <div>
@@ -75,7 +76,7 @@ const InfiniteTicker = () => {
 
   useEffect(() => {
     const fetchTickets = async () => {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from("winning_tickets")
         .select("*")
         .order("created_at", { ascending: false })
@@ -88,17 +89,14 @@ const InfiniteTicker = () => {
     fetchTickets();
   }, []);
 
-  // Return null if loading or no data
   if (loading) return null;
   if (tickets.length === 0) return null;
 
   return (
     <div className="w-full overflow-hidden relative py-8">
-      {/* Gradient Fades */}
       <div className="absolute top-0 left-0 w-16 sm:w-32 h-full bg-gradient-to-r from-bg-deep to-transparent z-10 pointer-events-none" />
       <div className="absolute top-0 right-0 w-16 sm:w-32 h-full bg-gradient-to-l from-bg-deep to-transparent z-10 pointer-events-none" />
 
-      {/* Scrolling Container */}
       <div className="flex w-max animate-scroll">
         <div className="flex">
           {tickets.map((ticket) => (
