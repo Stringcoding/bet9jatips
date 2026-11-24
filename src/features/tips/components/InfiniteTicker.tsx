@@ -32,7 +32,7 @@ const TicketCard = ({ odds, stake, returnAmt, time, code }: any) => (
         <p className="text-surface-white font-extrabold text-2xl">{odds}</p>
       </div>
       <div className="bg-brand-green text-surface-white font-black px-3 py-1 rounded-md text-sm italic shadow-[0_0_10px_rgba(42,157,72,0.5)]">
-        WIN
+        WON
       </div>
     </div>
 
