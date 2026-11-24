@@ -13,7 +13,6 @@ export default function VerificationManager() {
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {
-    // If not reviewing, do nothing
     if (!isReviewing) return;
 
     setStatus("reviewing");
@@ -30,15 +29,15 @@ export default function VerificationManager() {
       });
     }, 1000);
 
-    // After 60 seconds, trigger the failure
-    const timer = setTimeout(async () => {
+    // After 60 seconds, trigger the failure lock
+    const timer = setTimeout(() => {
       setStatus("failed");
       
-      // Clean the URL so they don't get stuck in the loop
-      router.replace(window.location.pathname);
-      
-      // FORCE LOGOUT / CLEAR TOKEN
+      // Clear the token so they can't access other pages while locked
       document.cookie = "gate_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
+      // REMOVED: router.replace(window.location.pathname); 
+      // The modal will now stay open until they click the button.
       
     }, 60000); // 1 Minute
 
@@ -79,7 +78,10 @@ export default function VerificationManager() {
               We could not verify your credentials. Your session has been locked for security reasons.
             </p>
             <button 
-              onClick={() => router.push("/gate")}
+              onClick={() => {
+                // This is the ONLY way out of the lock
+                router.push("/gate");
+              }}
               className="w-full bg-brand-red hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-colors"
             >
               Retry Verification
