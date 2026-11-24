@@ -27,10 +27,32 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // Get current user
+  // 1. Protect the /tips route (Gatekeeping)
+  if (request.nextUrl.pathname.startsWith('/tips')) {
+    const gateToken = request.cookies.get('gate_token')?.value;
+    
+    let hasAccess = false;
+    if (gateToken) {
+      // Check if token is valid in DB
+      const { data } = await supabase
+        .from('gate_access')
+        .select('id')
+        .eq('session_token', gateToken)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+      
+      hasAccess = !!data;
+    }
+
+    if (!hasAccess) {
+      // Kick them to the gate form
+      return NextResponse.redirect(new URL('/gate', request.url));
+    }
+  }
+
+  // 2. Protect Admin Routes
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 1. Protect Admin Routes
   if (request.nextUrl.pathname.startsWith('/admin')) {
     if (!user) {
       const url = request.nextUrl.clone()
@@ -38,7 +60,6 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // Check if the user has admin role
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -47,12 +68,12 @@ export async function proxy(request: NextRequest) {
 
     if (profile?.role !== 'admin') {
       const url = request.nextUrl.clone()
-      url.pathname = '/' // Kick non-admins back to homepage
+      url.pathname = '/'
       return NextResponse.redirect(url)
     }
   }
 
-  // 2. Redirect logged-in Admins away from the Login page
+  // 3. Redirect logged-in Admins away from the Login page
   if (request.nextUrl.pathname === '/login' && user) {
     const url = request.nextUrl.clone()
     url.pathname = '/admin'
@@ -63,5 +84,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/login'],
+  // Add '/tips' to the matcher
+  matcher: ['/admin/:path*', '/login', '/tips/:path*'],
 }
