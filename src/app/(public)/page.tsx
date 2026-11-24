@@ -86,12 +86,6 @@ export default async function HomePage() {
       {/* Infinite Winning Tickets */}
       <InfiniteTicker />
 
-      {/* How It Works */}
-      <HowItWorks />
-
-      {/* Top Tipsters */}
-      <TopTipsters />
-
       {/* Recent Tips */}
       <section className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -145,6 +139,14 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* How It Works */}
+      <HowItWorks />
+
+      {/* Top Tipsters */}
+      <TopTipsters />
+
+      
 
     </main>
   );
