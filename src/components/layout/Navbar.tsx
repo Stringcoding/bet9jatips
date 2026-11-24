@@ -2,7 +2,8 @@
 
 import React from "react";
 import Link from "next/link";
-import { Unlock } from "lucide-react"; // Added a nice icon for the button
+import Image from "next/image";
+import { Unlock } from "lucide-react";
 
 const Navbar = () => {
   return (
@@ -10,13 +11,16 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
         
         {/* Logo Area */}
-        <Link href="/" className="flex items-center gap-2">
-          <div className="bg-brand-green text-surface-white font-extrabold text-xl px-2 py-1 rounded">
-            bet<span className="text-brand-red">9ja</span>
+        <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+          <div className="relative h-8 sm:h-10 w-32 sm:w-40">
+            <Image
+              src="/logo.png"
+              alt="Bet9ja Tips"
+              fill
+              className="object-contain object-left"
+              priority
+            />
           </div>
-          <span className="text-surface-white font-bold text-lg hidden sm:block">
-            Tips
-          </span>
         </Link>
 
         {/* Desktop Navigation Links */}
@@ -34,12 +38,11 @@ const Navbar = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
-          {/* Changed from Register to Access Codes */}
           <Link 
             href="/gate" 
-            className="flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold px-4 py-2 rounded-lg transition-colors text-sm shadow-[0_0_15px_rgba(42,157,72,0.3)]"
+            className="flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold px-3 sm:px-4 py-2 rounded-lg transition-colors text-xs sm:text-sm shadow-[0_0_15px_rgba(42,157,72,0.3)]"
           >
-            <Unlock size={16} />
+            <Unlock size={16} className="hidden sm:block" />
             Access Codes
           </Link>
         </div>
