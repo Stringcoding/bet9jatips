@@ -27,27 +27,24 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  // 1. Protect the /tips route (Gatekeeping)
+  // 1. Protect /tips route (Gatekeeping)
   if (request.nextUrl.pathname.startsWith('/tips')) {
+    const isReviewing = request.nextUrl.searchParams.get("reviewing") === "true";
     const gateToken = request.cookies.get('gate_token')?.value;
-    
-    let hasAccess = false;
-    if (gateToken) {
-      // Check if token is valid in DB
-      const { data } = await supabase
-        .from('gate_access')
-        .select('id')
-        .eq('session_token', gateToken)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-      
-      hasAccess = !!data;
+
+    // If they are in the middle of reviewing, let them see the page
+    if (isReviewing) {
+      return supabaseResponse;
     }
 
-    if (!hasAccess) {
-      // Kick them to the gate form
+    // If they are NOT reviewing, they MUST have a valid gate_token
+    if (!gateToken) {
       return NextResponse.redirect(new URL('/gate', request.url));
     }
+
+    // Optional: You could add a DB check here to ensure the token is still valid
+    // const { data } = await supabase.from('gate_access').select('id').eq('session_token', gateToken).single();
+    // if (!data) return NextResponse.redirect(new URL('/gate', request.url));
   }
 
   // 2. Protect Admin Routes
@@ -60,6 +57,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
+    // Check if the user is actually an admin
     const { data: profile } = await supabase
       .from('profiles')
       .select('role')
@@ -68,7 +66,7 @@ export async function proxy(request: NextRequest) {
 
     if (profile?.role !== 'admin') {
       const url = request.nextUrl.clone()
-      url.pathname = '/'
+      url.pathname = '/' // Kick non-admins back to homepage
       return NextResponse.redirect(url)
     }
   }
@@ -84,6 +82,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Add '/tips' to the matcher
+  // Matcher ensures the proxy runs on these specific paths
   matcher: ['/admin/:path*', '/login', '/tips/:path*'],
 }
