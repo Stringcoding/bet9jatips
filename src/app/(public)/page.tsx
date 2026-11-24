@@ -1,16 +1,22 @@
 import HeroSection from "@/features/tips/components/HeroSection";
+import InfiniteTicker from "@/features/tips/components/InfiniteTicker"; // <-- Import
 import TipCard from "@/features/tips/components/TipCard";
 import MatchList from "@/features/tips/components/MatchList";
 import { Flame, TrendingUp } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen pb-20">
+    <main className="min-h-screen pb-20 overflow-x-hidden">
+      
       {/* 1. Hero Section */}
       <HeroSection />
 
-      {/* 2. Recent Tips Section */}
+      {/* 2. Infinite Horizontal Scroll Ticker */}
+      <InfiniteTicker /> {/* <-- Add right here */}
+
+      {/* 3. Recent Tips Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
+       
         <div className="flex items-center gap-2 mb-8">
           <Flame className="text-brand-red w-8 h-8" />
           <h2 className="text-3xl font-extrabold text-surface-white">Recent Tips</h2>
