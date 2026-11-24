@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { submitGateForm, submitVerificationForm } from "@/features/auth/actions";
-import { ShieldCheck, ChevronDown, Loader2, AlertCircle } from "lucide-react";
+import { ChevronDown, Loader2, AlertCircle } from "lucide-react";
 
 export default function GatePage() {
   const router = useRouter();
-  const [step, setStep] = useState(1); // 1 = Phone/ID, 2 = Verify ID Type
+  const [step, setStep] = useState(1); 
   
   const [mobile, setMobile] = useState("");
   const [idNumber, setIdNumber] = useState("");
@@ -15,38 +16,55 @@ export default function GatePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // STEP 1 SUBMIT
+  // 1. PREVENT BACK BUTTON BYPASS
+  useEffect(() => {
+    // If user hits back button, clear the gate token so they are forced to re-verify
+    window.history.pushState(null, "", window.location.href);
+    const handlePopState = () => {
+      document.cookie = "gate_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      setStep(1);
+      setIdNumber("");
+      setIdType("NIN");
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Save to DB and get a temporary token
     const result = await submitGateForm(mobile, idNumber);
     
     if (result?.error) {
       setError(result.error);
       setLoading(false);
     } else {
-      setStep(2); // Move to step 2
+      setStep(2);
+      // 2. CLEAR THE ID NUMBER FOR STEP 2
+      setIdNumber(""); 
       setLoading(false);
     }
   };
 
-  // STEP 2 SUBMIT
   const handleStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    // Save ID type to DB, set gate_token cookie, and redirect
+    if (!idNumber.trim()) {
+      setError("Please enter your ID number.");
+      setLoading(false);
+      return;
+    }
+
     const result = await submitVerificationForm(idType, idNumber);
     
     if (result?.error) {
       setError(result.error);
       setLoading(false);
     } else {
-      // Push to tips page. The proxy will read the cookie we just set.
       router.push("/tips?reviewing=true");
     }
   };
@@ -59,8 +77,14 @@ export default function GatePage() {
         <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/10 rounded-full blur-3xl" />
 
         <div className="flex flex-col items-center mb-8 relative z-10">
-          <div className="w-16 h-16 bg-brand-green/10 rounded-full flex items-center justify-center mb-4">
-            <ShieldCheck className="w-8 h-8 text-brand-green" />
+          {/* 3. REPLACED SHIELD WITH LOGO */}
+          <div className="relative h-12 w-40 mb-4">
+             <Image 
+               src="/logo.png" 
+               alt="Bet9ja Tips" 
+               fill 
+               className="object-contain" 
+             />
           </div>
           <h1 className="text-2xl font-extrabold text-surface-white text-center">
             {step === 1 ? "Access Coupon Codes" : "Verify Identity"}
@@ -132,10 +156,16 @@ export default function GatePage() {
               />
             </div>
 
-            <button type="submit" disabled={loading}
-              className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
-            </button>
+            <div className="flex gap-3 mt-4">
+              <button type="button" onClick={() => { setStep(1); setIdNumber(""); }} 
+                className="w-1/3 bg-bg-deep hover:bg-gray-800 text-surface-white font-bold py-3 rounded-xl transition-colors border border-gray-700">
+                Back
+              </button>
+              <button type="submit" disabled={loading}
+                className="w-2/3 bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
+              </button>
+            </div>
           </form>
         )}
 
