@@ -3,9 +3,9 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Copy, Lock } from "lucide-react";
+import { Copy, Lock, CheckCircle2 } from "lucide-react";
+import { VerifiedIcon } from "@/components/ui/VerifiedIcon"; // <-- Import the custom icon
 
-// THIS INTERFACE FIXES THE ERROR
 interface TipCardProps {
   user: string;
   odds: string;
@@ -44,7 +44,7 @@ const TipCard: React.FC<TipCardProps> = ({
         <div className="flex items-center gap-3">
           
           {/* DYNAMIC IMAGE OR FALLBACK LETTER */}
-          <div className="w-10 h-10 bg-bg-deep rounded-full flex items-center justify-center text-sm font-bold text-brand-green border border-gray-600 overflow-hidden relative">
+          <div className="w-10 h-10 bg-bg-deep rounded-full flex items-center justify-center text-sm font-bold text-brand-green border border-gray-600 overflow-hidden relative shrink-0">
             {avatarUrl ? (
               <Image src={avatarUrl} alt={user} fill className="object-cover" />
             ) : (
@@ -53,11 +53,12 @@ const TipCard: React.FC<TipCardProps> = ({
           </div>
 
           <div>
-            <div className="flex items-center gap-1 text-sm font-bold text-surface-white">
+            <div className="flex items-center gap-1.5 text-sm font-bold text-surface-white">
               {user}
-              {isVerified && <CheckCircle2 size={16} className="text-brand-green" />}
+              {/* REPLACED WITH CUSTOM ZIG-ZAG ICON */}
+              {isVerified && <VerifiedIcon size={16} className="text-brand-green" />}
             </div>
-            <div className="text-xs text-text-muted">{date}</div>
+            <div className="text-xs text-text-muted mt-0.5">{date}</div>
           </div>
         </div>
         <div className="text-right">
@@ -95,7 +96,7 @@ const TipCard: React.FC<TipCardProps> = ({
       {/* Actions */}
       <div className="flex gap-3">
         {isLocked ? (
-          <Link href="/gate" className="w-full text-center bg-brand-yellow hover:bg-yellow-500 text-bg-deep text-sm font-bold py-2.5 rounded-lg transition-colors">
+          <Link href="/gate" className="w-full text-center bg-brand-yellow hover:bg-yellow-500 text-bg-deep text-sm font-bold py-2.5 rounded-lg transition-colors shadow-[0_0_15px_rgba(253,185,19,0.2)]">
             Unlock Code to View
           </Link>
         ) : (
