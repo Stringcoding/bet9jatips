@@ -3,7 +3,8 @@
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { CheckCircle2, Copy, Share2, ShieldAlert, BarChart3, Clock, Lock } from "lucide-react";
+import { Copy, Share2, ShieldAlert, BarChart3, Clock, Lock, CheckCircle2 } from "lucide-react";
+import { VerifiedIcon } from "@/components/ui/VerifiedIcon"; // <-- Import custom icon
 
 interface PremiumTipCardProps {
   user: string;
@@ -13,10 +14,10 @@ interface PremiumTipCardProps {
   league?: string;
   matchesCount?: number;
   riskLevel?: "Low" | "Medium" | "High";
-  avatarUrl?: string;   // <-- Added for dynamic image
-  cardTitle?: string;   // <-- Added for dynamic subtitle
+  avatarUrl?: string;
+  cardTitle?: string;
   isVerified?: boolean;
-  isLocked?: boolean;   // <-- Added for the gate locking
+  isLocked?: boolean;
 }
 
 const PremiumTipCard: React.FC<PremiumTipCardProps> = ({
@@ -71,9 +72,10 @@ const PremiumTipCard: React.FC<PremiumTipCardProps> = ({
             </div>
 
             <div>
-              <div className="flex items-center gap-1 text-base font-bold text-surface-white">
+              <div className="flex items-center gap-1.5 text-base font-bold text-surface-white">
                 {user}
-                {isVerified && <CheckCircle2 size={16} className="text-brand-green" />}
+                {/* REPLACED WITH CUSTOM ZIG-ZAG ICON */}
+                {isVerified && <VerifiedIcon size={18} className="text-brand-green" />}
               </div>
               <div className="text-xs text-text-muted flex items-center gap-1 mt-1">
                 <Clock size={12} /> {date}
