@@ -13,6 +13,7 @@ export default function VerificationManager() {
   const [timeLeft, setTimeLeft] = useState(60);
 
   useEffect(() => {
+    // If not reviewing, do nothing
     if (!isReviewing) return;
 
     setStatus("reviewing");
@@ -30,10 +31,15 @@ export default function VerificationManager() {
     }, 1000);
 
     // After 60 seconds, trigger the failure
-    const timer = setTimeout(() => {
+    const timer = setTimeout(async () => {
       setStatus("failed");
-      // Clear the URL param so they don't get stuck in a loop
+      
+      // Clean the URL so they don't get stuck in the loop
       router.replace(window.location.pathname);
+      
+      // FORCE LOGOUT / CLEAR TOKEN
+      document.cookie = "gate_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      
     }, 60000); // 1 Minute
 
     return () => {
