@@ -2,6 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
+import { Unlock } from "lucide-react"; // Added a nice icon for the button
 
 const Navbar = () => {
   return (
@@ -33,17 +34,13 @@ const Navbar = () => {
 
         {/* Action Buttons */}
         <div className="flex items-center gap-3">
+          {/* Changed from Register to Access Codes */}
           <Link 
-            href="/login" 
-            className="hidden sm:block text-bg-deep bg-brand-yellow hover:bg-yellow-500 font-bold px-4 py-2 rounded transition-colors text-sm"
+            href="/gate" 
+            className="flex items-center gap-2 bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold px-4 py-2 rounded-lg transition-colors text-sm shadow-[0_0_15px_rgba(42,157,72,0.3)]"
           >
-            Login
-          </Link>
-          <Link 
-            href="/register" 
-            className="bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold px-4 py-2 rounded transition-colors text-sm"
-          >
-            Register
+            <Unlock size={16} />
+            Access Codes
           </Link>
         </div>
 
