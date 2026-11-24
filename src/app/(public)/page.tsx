@@ -1,8 +1,9 @@
 import HeroSection from "@/features/tips/components/HeroSection";
-import InfiniteTicker from "@/features/tips/components/InfiniteTicker"; // <-- Import
+import InfiniteTicker from "@/features/tips/components/InfiniteTicker";
+import HowItWorks from "@/features/tips/components/HowItWorks";
+import TopTipsters from "@/features/tips/components/TopTipsters";
 import TipCard from "@/features/tips/components/TipCard";
-import MatchList from "@/features/tips/components/MatchList";
-import { Flame, TrendingUp } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -12,11 +13,16 @@ export default function HomePage() {
       <HeroSection />
 
       {/* 2. Infinite Horizontal Scroll Ticker */}
-      <InfiniteTicker /> {/* <-- Add right here */}
+      <InfiniteTicker />
 
-      {/* 3. Recent Tips Section */}
+      {/* 3. How It Works Section */}
+      <HowItWorks />
+
+      {/* 4. Top Tipsters Leaderboard Section */}
+      <TopTipsters />
+
+      {/* 5. Recent Tips Section */}
       <section className="max-w-7xl mx-auto px-6 py-12">
-       
         <div className="flex items-center gap-2 mb-8">
           <Flame className="text-brand-red w-8 h-8" />
           <h2 className="text-3xl font-extrabold text-surface-white">Recent Tips</h2>
@@ -45,15 +51,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Matches / Leagues Section */}
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center gap-2 mb-8">
-          <TrendingUp className="text-brand-green w-8 h-8" />
-          <h2 className="text-3xl font-extrabold text-surface-white">Today's Top Odds</h2>
-        </div>
-        
-        <MatchList />
-      </section>
     </main>
   );
 }
