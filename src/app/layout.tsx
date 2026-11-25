@@ -28,8 +28,8 @@ export const metadata: Metadata = {
   // 3. Icons (Favicon & Apple Touch)
   icons: {
     icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    shortcut: "/favicon.ICO",
+    apple: "/apple-touch-icon.PNG",
   },
 
   // 4. Open Graph (Facebook, WhatsApp, LinkedIn, Telegram)
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     siteName: "Bet9ja Tips",
     images: [
       {
-        url: "/og-image.jpg", // Make sure this is in your public folder
+        url: "/og-image.JPG", // Make sure this is in your public folder
         width: 1200,
         height: 630,
         alt: "Bet9ja Tips - Get Sure Odds Daily",
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Bet9ja Tips | Get Sure Odds Daily",
     description: "Unlock today's verified Bet9ja coupon codes and start winning.",
-    images: ["/og-image.jpg"],
+    images: ["/og-image.JPG"],
     creator: "@yourtwitterhandle", // Update this if you have a Twitter account
   },
 
