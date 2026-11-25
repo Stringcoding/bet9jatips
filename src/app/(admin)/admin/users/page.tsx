@@ -8,6 +8,7 @@ export default function AdminUsersPage() {
   const supabase = createClient();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [verifyingId, setVerifyingId] = useState<string | null>(null);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -25,6 +26,30 @@ export default function AdminUsersPage() {
   useEffect(() => {
     fetchRecords();
   }, []);
+
+  // Function to manually verify a user
+  const handleVerify = async (id: string) => {
+    setVerifyingId(id);
+    
+    // Update the status to 'verified'
+    const { error } = await supabase
+      .from("gate_access")
+      .update({ verification_status: "verified" })
+      .eq("id", id);
+
+    if (error) {
+      alert("Error verifying user: " + error.message);
+    } else {
+      // Refresh the local state instantly
+      setRecords((prev) => 
+        prev.map((record) => 
+          record.id === id ? { ...record, verification_status: "verified" } : record
+        )
+      );
+    }
+    
+    setVerifyingId(null);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -48,7 +73,7 @@ export default function AdminUsersPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-surface-white">Users & Gate Access</h1>
-            <p className="text-text-muted text-sm mt-1">Track all verification attempts and user data.</p>
+            <p className="text-text-muted text-sm mt-1">Track and manually verify user attempts.</p>
           </div>
         </div>
         
@@ -77,6 +102,7 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-4">Step 1 (Initial)</th>
                   <th className="px-6 py-4">Step 2 (Verification)</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
@@ -122,6 +148,28 @@ export default function AdminUsersPage() {
                     {/* Status */}
                     <td className="px-6 py-4">
                       {getStatusBadge(record.verification_status)}
+                    </td>
+
+                    {/* Action Button */}
+                    <td className="px-6 py-4">
+                      {record.verification_status !== "verified" ? (
+                        <button
+                          onClick={() => handleVerify(record.id)}
+                          disabled={verifyingId === record.id}
+                          className="bg-brand-green hover:bg-brand-green-dark text-white text-xs font-bold py-2 px-4 rounded-lg transition-colors flex items-center gap-2"
+                        >
+                          {verifyingId === record.id ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            <CheckCircle2 size={14} />
+                          )}
+                          Verify
+                        </button>
+                      ) : (
+                        <span className="text-text-muted text-xs flex items-center gap-1">
+                          <CheckCircle2 size={14} className="text-brand-green" /> Approved
+                        </span>
+                      )}
                     </td>
 
                   </tr>
