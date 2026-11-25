@@ -2,23 +2,27 @@
 
 import React, { useState } from "react";
 import PremiumTipCard from "./PremiumTipCard";
-import { Filter, SlidersHorizontal, Search, TrendingUp } from "lucide-react";
-import { useSearchParams } from "next/navigation"; // <-- Import this
+import { Filter, Search, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import Link from "next/link";
 
 const leages = ["All Leagues", "EPL", "La Liga", "Serie A", "UCL", "NPFL", "Mixed"];
 
-export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[], hasAccess: boolean }) {
+interface TipsGridProps {
+  initialTips: any[];
+  hasAccess: boolean;
+  currentPage: number;
+  totalPages: number;
+}
+
+export default function TipsGrid({ initialTips, hasAccess, currentPage, totalPages }: TipsGridProps) {
   const [activeLeague, setActiveLeague] = useState("All Leagues");
   const [search, setSearch] = useState("");
   
-  // Check if the user is currently in the 60-second review state
   const searchParams = useSearchParams();
   const isReviewing = searchParams.get("reviewing") === "true";
-
-  // If they are reviewing, we force the lock to be TRUE for all cards
   const forceLock = isReviewing ? true : !hasAccess;
 
-  // Filter logic
   const filteredTips = initialTips.filter(tip => {
     const matchesLeague = activeLeague === "All Leagues" || tip.league === activeLeague;
     const matchesSearch = tip.punter_name.toLowerCase().includes(search.toLowerCase()) || 
@@ -72,7 +76,7 @@ export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[
       {/* Main Grid */}
       <div className="flex-1">
         
-        {/* Mobile Filters & Search */}
+        {/* Mobile Filters */}
         <div className="lg:hidden flex flex-col gap-4 mb-6">
            <div className="relative w-full">
             <input 
@@ -117,9 +121,9 @@ export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[
 
         {/* The Grid */}
         {filteredTips.length === 0 ? (
-          <div className="text-center text-text-muted py-12">No tips found matching your filters.</div>
+          <div className="text-center text-text-muted py-12">No tips found on this page matching your filters.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
             {filteredTips.map((tip) => (
               <PremiumTipCard 
                 key={tip.id}
@@ -132,12 +136,43 @@ export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[
                 riskLevel={tip.risk_level}
                 avatarUrl={tip.punter_avatar_url}
                 cardTitle={tip.card_title}
-                // THIS IS THE KEY CHANGE
                 isLocked={forceLock} 
               />
             ))}
           </div>
         )}
+
+        {/* PAGINATION CONTROLS */}
+        {totalPages > 1 && !search && activeLeague === "All Leagues" && (
+          <div className="flex items-center justify-between border-t border-gray-800 pt-6">
+            <Link
+              href={`/tips?page=${currentPage - 1}${isReviewing ? '&reviewing=true' : ''}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                currentPage <= 1 
+                  ? "bg-bg-slate text-gray-600 pointer-events-none opacity-50" 
+                  : "bg-bg-slate text-surface-white hover:bg-gray-700"
+              }`}
+            >
+              <ChevronLeft size={16} /> Previous
+            </Link>
+
+            <div className="text-text-muted text-sm font-medium">
+              Page <span className="text-surface-white font-bold">{currentPage}</span> of {totalPages}
+            </div>
+
+            <Link
+              href={`/tips?page=${currentPage + 1}${isReviewing ? '&reviewing=true' : ''}`}
+              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-colors ${
+                currentPage >= totalPages 
+                  ? "bg-bg-slate text-gray-600 pointer-events-none opacity-50" 
+                  : "bg-brand-green text-surface-white hover:bg-brand-green-dark"
+              }`}
+            >
+              Next <ChevronRight size={16} />
+            </Link>
+          </div>
+        )}
+
       </div>
     </div>
   );
