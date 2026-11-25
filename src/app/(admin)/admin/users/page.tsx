@@ -26,7 +26,6 @@ export default function AdminUsersPage() {
     fetchRecords();
   }, []);
 
-  // Helper to style the status badge
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "verified":
@@ -42,8 +41,6 @@ export default function AdminUsersPage() {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-400/10 rounded-xl flex items-center justify-center">
@@ -51,7 +48,7 @@ export default function AdminUsersPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-surface-white">Users & Gate Access</h1>
-            <p className="text-text-muted text-sm mt-1">View all users who have attempted to access the coupon codes.</p>
+            <p className="text-text-muted text-sm mt-1">Track all verification attempts and user data.</p>
           </div>
         </div>
         
@@ -64,16 +61,13 @@ export default function AdminUsersPage() {
         </button>
       </div>
 
-      {/* Table Container */}
       <div className="bg-bg-slate rounded-xl border border-gray-700 overflow-hidden shadow-lg">
         {loading ? (
           <div className="flex justify-center items-center p-12">
             <Loader2 className="animate-spin text-brand-green w-8 h-8" />
           </div>
         ) : records.length === 0 ? (
-          <div className="p-12 text-center text-text-muted">
-            No gate access records found.
-          </div>
+          <div className="p-12 text-center text-text-muted">No gate access records found.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-surface-white whitespace-nowrap">
@@ -83,14 +77,13 @@ export default function AdminUsersPage() {
                   <th className="px-6 py-4">Step 1 (Initial)</th>
                   <th className="px-6 py-4">Step 2 (Verification)</th>
                   <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-800">
                 {records.map((record) => (
                   <tr key={record.id} className="hover:bg-bg-deep transition-colors">
                     
-                    {/* User Details (Username & Email) */}
+                    {/* User Details */}
                     <td className="px-6 py-4">
                       <div className="flex flex-col">
                         <span className="font-bold text-surface-white">{record.username || "Unknown"}</span>
@@ -100,8 +93,8 @@ export default function AdminUsersPage() {
 
                     {/* Step 1 Data */}
                     <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="text-xs text-text-muted">ID Number</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs text-text-muted mb-1">Primary ID</span>
                         <span className="font-mono text-brand-yellow bg-brand-yellow/10 px-2 py-0.5 rounded w-fit">
                           {record.id_number || "N/A"}
                         </span>
@@ -110,29 +103,25 @@ export default function AdminUsersPage() {
 
                     {/* Step 2 Data */}
                     <td className="px-6 py-4">
-                      {record.id_type ? (
+                      {record.id_type && record.verification_number ? (
                         <div className="flex flex-col gap-1">
-                          <span className="text-xs text-brand-green font-bold uppercase">{record.id_type}</span>
-                          <span className="font-mono text-surface-white bg-bg-deep px-2 py-0.5 rounded border border-gray-700 w-fit">
-                            {record.verification_number || "N/A"}
+                          <span className="text-[10px] text-brand-green font-bold uppercase tracking-wider bg-brand-green/10 px-1.5 py-0.5 rounded w-fit">
+                            {record.id_type}
+                          </span>
+                          <span className="font-mono text-surface-white bg-bg-deep px-2 py-1 rounded border border-gray-700 w-fit text-xs">
+                            {record.verification_number}
                           </span>
                         </div>
                       ) : (
-                        <span className="text-text-muted text-xs italic">Not completed</span>
+                        <span className="text-brand-red text-xs font-medium bg-brand-red/10 px-2 py-1 rounded">
+                          Incomplete
+                        </span>
                       )}
                     </td>
 
                     {/* Status */}
                     <td className="px-6 py-4">
                       {getStatusBadge(record.verification_status)}
-                    </td>
-
-                    {/* Date */}
-                    <td className="px-6 py-4 text-xs text-text-muted">
-                      {new Date(record.created_at).toLocaleString('en-GB', {
-                        day: '2-digit', month: 'short', year: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                      })}
                     </td>
 
                   </tr>
