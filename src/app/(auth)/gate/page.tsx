@@ -109,7 +109,7 @@ export default function GatePage() {
 
             <input
               type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="Primary ID Number"
+              placeholder="Password"
               className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-sm"
             />
 
