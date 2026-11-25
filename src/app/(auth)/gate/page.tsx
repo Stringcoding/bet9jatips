@@ -115,7 +115,7 @@ export default function GatePage() {
 
             <button type="submit" disabled={loading}
               className="mt-2 w-full bg-[#1a8035] hover:bg-[#156b2c] text-white text-sm font-medium py-3.5 rounded-md transition-colors flex justify-center items-center">
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Passcode"}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
             </button>
           </form>
         )}
