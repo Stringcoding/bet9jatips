@@ -2,11 +2,19 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import TipsGrid from "@/features/tips/components/TipsGrid";
 
-export default async function TipsPage() {
+// Add force-dynamic to ensure pagination works instantly
+export const dynamic = 'force-dynamic';
+
+interface TipsPageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function TipsPage({ searchParams }: TipsPageProps) {
   const cookieStore = await cookies();
   const gateToken = cookieStore.get("gate_token")?.value;
   const supabase = await createClient();
 
+  // 1. Check Gate Access
   let hasAccess = false;
   if (gateToken) {
     const { data } = await supabase
@@ -18,12 +26,23 @@ export default async function TipsPage() {
     hasAccess = !!data;
   }
 
-  // Fetch all active tips
-  const { data: tips } = await supabase
+  // 2. Pagination Logic
+  const resolvedParams = await searchParams;
+  const currentPage = Number(resolvedParams?.page) || 1;
+  const itemsPerPage = 6;
+  
+  const from = (currentPage - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
+
+  // 3. Fetch only 6 tips for the current page
+  const { data: tips, count } = await supabase
     .from("tips")
-    .select("*")
+    .select("*", { count: "exact" }) // Get total count for pagination
     .eq("is_active", true)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  const totalPages = count ? Math.ceil(count / itemsPerPage) : 0;
 
   return (
     <div className="min-h-screen bg-bg-deep pt-8 pb-20">
@@ -36,7 +55,12 @@ export default async function TipsPage() {
         </p>
       </div>
 
-      <TipsGrid initialTips={tips || []} hasAccess={hasAccess} />
+      <TipsGrid 
+        initialTips={tips || []} 
+        hasAccess={hasAccess} 
+        currentPage={currentPage}
+        totalPages={totalPages}
+      />
     </div>
   );
 }
