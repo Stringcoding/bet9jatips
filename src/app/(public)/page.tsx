@@ -101,7 +101,7 @@ export default async function HomePage() {
               href="/gate"
               className="text-brand-yellow text-sm font-medium animate-pulse hover:underline"
             >
-              Pass the form to unlock codes →
+              Unlock codes →
             </Link>
           )}
         </div>
