@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -41,6 +41,10 @@ export async function middleware(request: NextRequest) {
     if (!gateToken) {
       return NextResponse.redirect(new URL('/gate', request.url));
     }
+
+    // Optional: You could add a DB check here to ensure the token is still valid
+    // const { data } = await supabase.from('gate_access').select('id').eq('session_token', gateToken).single();
+    // if (!data) return NextResponse.redirect(new URL('/gate', request.url));
   }
 
   // 2. Protect Admin Routes
@@ -78,6 +82,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Matcher ensures middleware only runs on these specific paths
+  // Matcher ensures the proxy runs on these specific paths
   matcher: ['/admin/:path*', '/login', '/tips/:path*'],
 }
