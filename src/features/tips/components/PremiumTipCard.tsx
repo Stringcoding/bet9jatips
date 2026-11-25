@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Copy, Share2, ShieldAlert, BarChart3, Clock, Lock, CheckCircle2 } from "lucide-react";
-import { VerifiedIcon } from "@/components/ui/VerifiedIcon"; // <-- Import custom icon
+import { VerifiedIcon } from "@/components/ui/VerifiedIcon";
 
 interface PremiumTipCardProps {
   user: string;
@@ -42,7 +42,6 @@ const PremiumTipCard: React.FC<PremiumTipCardProps> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Color mapping for risk levels
   const riskColor =
     riskLevel === "Low"
       ? "text-brand-green bg-brand-green/10 border-brand-green/20"
@@ -74,7 +73,6 @@ const PremiumTipCard: React.FC<PremiumTipCardProps> = ({
             <div>
               <div className="flex items-center gap-1.5 text-base font-bold text-surface-white">
                 {user}
-                {/* REPLACED WITH CUSTOM ZIG-ZAG ICON */}
                 {isVerified && <VerifiedIcon size={18} className="text-brand-green" />}
               </div>
               <div className="text-xs text-text-muted flex items-center gap-1 mt-1">
@@ -143,12 +141,9 @@ const PremiumTipCard: React.FC<PremiumTipCardProps> = ({
         {/* Actions */}
         <div className="flex gap-3 mt-auto pt-4">
           {isLocked ? (
-            <Link 
-              href="/gate" 
-              className="w-full text-center bg-brand-yellow hover:bg-yellow-500 text-bg-deep text-sm font-bold py-3 rounded-lg transition-colors shadow-[0_0_15px_rgba(253,185,19,0.3)]"
-            >
-              Unlock Code to View
-            </Link>
+            <div className="w-full text-center bg-bg-slate text-brand-yellow border border-brand-yellow/30 text-sm font-bold py-3 rounded-lg shadow-[0_0_15px_rgba(253,185,19,0.1)]">
+              Unlocking...
+            </div>
           ) : (
             <>
               <button className="flex-1 bg-bg-slate hover:bg-gray-700 text-surface-white text-sm font-bold py-3 rounded-lg transition-colors border border-gray-700/50 flex items-center justify-center gap-2">
