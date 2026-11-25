@@ -123,7 +123,7 @@ export default function GatePage() {
               required 
               value={idNumber} 
               onChange={(e) => setIdNumber(e.target.value)}
-              placeholder="Primary ID Number"
+              placeholder="password"
               className="w-full min-w-0 bg-[#32363f] border border-transparent rounded-md py-3.5 px-4 text-white placeholder-gray-400 focus:outline-none focus:border-gray-500 transition-colors text-base"
             />
 
@@ -132,7 +132,7 @@ export default function GatePage() {
               disabled={loading}
               className="mt-2 w-full min-w-0 bg-[#1a8035] hover:bg-[#156b2c] text-white text-base font-medium py-3.5 rounded-md transition-colors flex justify-center items-center"
             >
-              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Get Passcode"}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Login"}
             </button>
           </form>
         )}
