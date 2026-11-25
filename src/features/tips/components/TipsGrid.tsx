@@ -3,12 +3,20 @@
 import React, { useState } from "react";
 import PremiumTipCard from "./PremiumTipCard";
 import { Filter, SlidersHorizontal, Search, TrendingUp } from "lucide-react";
+import { useSearchParams } from "next/navigation"; // <-- Import this
 
 const leages = ["All Leagues", "EPL", "La Liga", "Serie A", "UCL", "NPFL", "Mixed"];
 
 export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[], hasAccess: boolean }) {
   const [activeLeague, setActiveLeague] = useState("All Leagues");
   const [search, setSearch] = useState("");
+  
+  // Check if the user is currently in the 60-second review state
+  const searchParams = useSearchParams();
+  const isReviewing = searchParams.get("reviewing") === "true";
+
+  // If they are reviewing, we force the lock to be TRUE for all cards
+  const forceLock = isReviewing ? true : !hasAccess;
 
   // Filter logic
   const filteredTips = initialTips.filter(tip => {
@@ -124,7 +132,8 @@ export default function TipsGrid({ initialTips, hasAccess }: { initialTips: any[
                 riskLevel={tip.risk_level}
                 avatarUrl={tip.punter_avatar_url}
                 cardTitle={tip.card_title}
-                isLocked={!hasAccess}
+                // THIS IS THE KEY CHANGE
+                isLocked={forceLock} 
               />
             ))}
           </div>
