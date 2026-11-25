@@ -47,6 +47,8 @@ export default function GatePage() {
     }
   };
 
+  // Find the handleStep2 function and update the call:
+
   const handleStep2 = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -58,7 +60,8 @@ export default function GatePage() {
       return;
     }
 
-    const result = await submitVerificationForm(idType, idNumber);
+    // PASS THE EMAIL HERE
+    const result = await submitVerificationForm(idType, idNumber, email);
     
     if (result?.error) {
       setError(result.error);
@@ -67,7 +70,6 @@ export default function GatePage() {
       router.push("/tips?reviewing=true");
     }
   };
-
   return (
     <div className="min-h-screen bg-bg-deep flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-bg-slate rounded-2xl border border-gray-700 p-8 shadow-2xl relative overflow-hidden">
