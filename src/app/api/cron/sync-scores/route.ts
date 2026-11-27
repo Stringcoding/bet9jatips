@@ -24,8 +24,9 @@ export async function GET(request: Request) {
   );
 
   try {
+    // ✅ CHANGED ENDPOINT: Target the /live/ widget specifically
     const res = await fetch(
-      "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
+      "https://sportscore.com/api/widget/matches/?sport=football&status=live&limit=20&src=bet9jatips",
       { cache: "no-store" }
     );
 
@@ -36,15 +37,14 @@ export async function GET(request: Request) {
     const json = await res.json();
     const matches = json.matches || []; 
 
-    // Map the EXACT structure from the screenshot
+    // Map the EXACT structure from SportScore
     const formattedMatches = matches
-      .filter((match: any) => match && match.url) // Ensure there is a unique identifier
+      .filter((match: any) => match && match.url) 
       .map((match: any) => {
         
-        // Use the URL as the unique ID, stripping out slashes to keep it clean
         const matchId = match.url.replace(/\//g, '-');
         
-        // Determine minute/status display
+        // Handle the live minute perfectly
         let minuteDisplay = match.status_text || "LIVE";
         if (match.live_minute) {
           minuteDisplay = `${match.live_minute}'`;
@@ -66,20 +66,23 @@ export async function GET(request: Request) {
       });
 
     if (formattedMatches.length > 0) {
-      // Use upsert to update existing matches, and insert new ones
+      // Clear out old finished matches before inserting new ones
+      await supabase.from("live_scores").delete().neq("id", "none");
+
       const { error } = await supabase
         .from("live_scores")
         .upsert(formattedMatches, { onConflict: "id" });
 
       if (error) {
-        console.error("Supabase Insert Error:", error);
         return NextResponse.json({ error: `Supabase Error: ${error.message}` }, { status: 500 });
       }
+    } else {
+       // If no live matches exist right now, clear the table
+       await supabase.from("live_scores").delete().neq("id", "none");
     }
 
     return NextResponse.json({ success: true, count: formattedMatches.length });
   } catch (error: any) {
-    console.error("System Error:", error);
     return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
   }
 }
