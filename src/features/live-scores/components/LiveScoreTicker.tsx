@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Radio, Clock } from "lucide-react";
+import { Radio, Clock, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
@@ -79,18 +79,16 @@ export default function LiveScoreTicker() {
               <span className="w-2 h-2 rounded-full bg-brand-red animate-ping" /> 
               Live
             </div>
-            <h2 className="text-lg font-bold text-surface-white">Football Scores</h2>
+            <h2 className="text-lg font-bold text-surface-white hidden sm:block">Football Scores</h2>
           </div>
           
-          {/* REQUIRED SPORTSCORE ATTRIBUTION */}
-          <a 
-            href="https://sportscore.com/" 
-            rel="dofollow" 
-            target="_blank"
-            className="text-xs text-text-muted hover:text-surface-white transition-colors"
+          {/* View All Button */}
+          <Link 
+            href="/live-scores" 
+            className="flex items-center gap-1 text-sm font-bold text-brand-green hover:text-white transition-colors bg-brand-green/10 hover:bg-brand-green px-3 py-1.5 rounded-lg border border-brand-green/20"
           >
-            Data by SportScore
-          </a>
+            Check Live Score <ChevronRight size={16} />
+          </Link>
         </div>
 
         {/* Horizontal Scroll Container */}
@@ -104,8 +102,12 @@ export default function LiveScoreTicker() {
               {/* League & Minute */}
               <div className="flex justify-between items-center text-xs text-text-muted border-b border-gray-700/50 pb-2">
                 <span className="truncate max-w-[150px]">{match.league}</span>
-                <span className="flex items-center gap-1 text-brand-yellow font-bold bg-brand-yellow/10 px-1.5 py-0.5 rounded">
-                  <Clock size={12} /> {match.minute}'
+                <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded ${
+                  match.minute === "FT" 
+                    ? "text-gray-400 bg-gray-800" 
+                    : "text-brand-yellow bg-brand-yellow/10"
+                }`}>
+                  <Clock size={12} /> {match.minute}
                 </span>
               </div>
 
@@ -139,6 +141,19 @@ export default function LiveScoreTicker() {
             </Link>
           ))}
         </div>
+
+        {/* SportScore Attribution (Required) */}
+        <div className="mt-3 text-right">
+          <a 
+            href="https://sportscore.com/" 
+            rel="dofollow" 
+            target="_blank"
+            className="text-[10px] text-text-muted/50 hover:text-surface-white transition-colors"
+          >
+            Data by SportScore
+          </a>
+        </div>
+
       </div>
     </section>
   );
