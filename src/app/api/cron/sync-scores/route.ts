@@ -24,7 +24,6 @@ export async function GET(request: Request) {
   );
 
   try {
-    // Fetch from SportScore
     const res = await fetch(
       "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
       { cache: "no-store" }
@@ -35,48 +34,52 @@ export async function GET(request: Request) {
     }
 
     const json = await res.json();
-    
-    // DEBUG: Log the first item to Vercel logs so we can see the exact keys
-    console.log("First match from SportScore:", JSON.stringify(json.matches?.[0] || json.data?.[0] || json, null, 2));
+    const matches = json.matches || []; 
 
-    const matches = json.matches || json.data || []; 
-
+    // Map the EXACT structure from the screenshot
     const formattedMatches = matches
-      .filter((match: any) => match && (match.id || match.matchId)) 
+      .filter((match: any) => match && match.url) // Ensure there is a unique identifier
       .map((match: any) => {
-        const matchId = match.id || match.matchId;
-        const home = match.homeTeam?.name || match.home?.name || "Home";
-        const away = match.awayTeam?.name || match.away?.name || "Away";
-        const homeScore = match.homeScore ?? match.home?.score ?? 0;
-        const awayScore = match.awayScore ?? match.away?.score ?? 0;
-        const league = match.competition?.name || match.league?.name || "Football";
-        const minute = match.time || match.minute || "LIVE";
+        
+        // Use the URL as the unique ID, stripping out slashes to keep it clean
+        const matchId = match.url.replace(/\//g, '-');
+        
+        // Determine minute/status display
+        let minuteDisplay = match.status_text || "LIVE";
+        if (match.live_minute) {
+          minuteDisplay = `${match.live_minute}'`;
+        } else if (match.status === "finished") {
+          minuteDisplay = "FT";
+        }
 
         return {
-          id: matchId.toString(),
-          league: league,
-          home_team: home,
-          away_team: away,
-          home_score: Number(homeScore),
-          away_score: Number(awayScore),
-          minute: minute.toString(),
+          id: matchId,
+          league: match.competition || "Football",
+          home_team: match.home || "Home",
+          away_team: match.away || "Away",
+          home_score: Number(match.home_score) || 0,
+          away_score: Number(match.away_score) || 0,
+          minute: minuteDisplay,
           status: match.status || "inplay",
           updated_at: new Date().toISOString(),
         };
       });
 
     if (formattedMatches.length > 0) {
+      // Use upsert to update existing matches, and insert new ones
       const { error } = await supabase
         .from("live_scores")
         .upsert(formattedMatches, { onConflict: "id" });
 
       if (error) {
+        console.error("Supabase Insert Error:", error);
         return NextResponse.json({ error: `Supabase Error: ${error.message}` }, { status: 500 });
       }
     }
 
     return NextResponse.json({ success: true, count: formattedMatches.length });
   } catch (error: any) {
+    console.error("System Error:", error);
     return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
   }
 }
