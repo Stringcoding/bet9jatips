@@ -6,7 +6,7 @@ import InfiniteTicker from "@/features/tips/components/InfiniteTicker";
 import HowItWorks from "@/features/tips/components/HowItWorks";
 import TopTipsters from "@/features/tips/components/TopTipsters";
 import TipCard from "@/features/tips/components/TipCard";
-
+import LiveScoreTicker from "@/features/live-scores/components/LiveScoreTicker";
 import { Flame } from "lucide-react";
 import Link from "next/link";
 
@@ -142,6 +142,8 @@ export default async function HomePage() {
 
       {/* How It Works */}
       <HowItWorks />
+
+      <LiveScoreTicker />
 
       {/* Top Tipsters */}
       <TopTipsters />
