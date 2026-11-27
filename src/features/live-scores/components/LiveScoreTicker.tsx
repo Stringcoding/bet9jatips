@@ -1,52 +1,65 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Radio, Clock, ChevronRight } from "lucide-react";
+import { Radio, Clock } from "lucide-react";
+import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
 
 interface LiveMatch {
-  id: number;
-  name: string;
-  state: string;
-  minute: number;
-  homeTeam: string;
-  awayTeam: string;
-  homeScore: number;
-  awayScore: number;
+  id: string;
   league: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  minute: string;
+  status: string;
 }
 
 export default function LiveScoreTicker() {
   const [matches, setMatches] = useState<LiveMatch[]>([]);
   const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
-  // Fetch live matches from our internal API route
   useEffect(() => {
-    const fetchLiveScores = async () => {
-      try {
-        const res = await fetch("/api/live-scores");
-        const data = await res.json();
-        if (data.matches) {
-          setMatches(data.matches);
-        }
-      } catch (error) {
-        console.error("Failed to fetch live scores", error);
-      } finally {
-        setLoading(false);
-      }
+    // 1. Fetch initial data from Supabase
+    const fetchScores = async () => {
+      const { data } = await supabase
+        .from("live_scores")
+        .select("*")
+        .order("updated_at", { ascending: false });
+      
+      if (data) setMatches(data);
+      setLoading(false);
     };
 
-    fetchLiveScores();
-    
-    // Poll every 60 seconds for fresh live data
-    const interval = setInterval(fetchLiveScores, 60000);
-    return () => clearInterval(interval);
+    fetchScores();
+
+    // 2. Subscribe to Realtime updates from Supabase!
+    // This means when the cron job updates the DB, the UI updates instantly without refreshing.
+    const channel = supabase
+      .channel("live-score-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "live_scores" },
+        (payload) => {
+          // Re-fetch or patch the state when a score updates
+          fetchScores(); 
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   if (loading) {
     return (
-      <div className="w-full bg-bg-slate border-y border-gray-800 py-4 px-6 flex items-center justify-center">
-        <span className="text-text-muted text-sm animate-pulse">Loading Live Matches...</span>
+      <div className="w-full bg-bg-deep border-y border-gray-800 py-6 px-6 flex items-center justify-center">
+        <span className="text-text-muted text-sm animate-pulse flex items-center gap-2">
+           <Radio size={16} className="text-brand-red" /> Syncing Live Scores...
+        </span>
       </div>
     );
   }
@@ -54,28 +67,41 @@ export default function LiveScoreTicker() {
   if (matches.length === 0) return null;
 
   return (
-    <section className="w-full bg-bg-deep border-b border-gray-800 py-6">
-      <div className="max-w-7xl mx-auto px-6">
+    <section className="w-full bg-bg-deep border-y border-gray-800 py-6 relative overflow-hidden">
+      
+      {/* Premium Background Accent */}
+      <div className="absolute top-0 left-0 w-64 h-full bg-brand-green/5 blur-3xl pointer-events-none" />
+
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-brand-red/10 border border-brand-red/20 px-2 py-1 rounded text-brand-red text-xs font-bold uppercase tracking-wider">
-              <Radio size={14} className="animate-pulse" /> Live Now
+            <div className="flex items-center gap-1.5 bg-brand-red/10 border border-brand-red/20 px-2 py-1 rounded text-brand-red text-xs font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(227,30,36,0.2)]">
+              <span className="w-2 h-2 rounded-full bg-brand-red animate-ping" /> 
+              Live
             </div>
             <h2 className="text-lg font-bold text-surface-white">Football Scores</h2>
           </div>
-          <Link href="/live-scores" className="text-sm text-brand-green hover:text-brand-green-dark font-medium flex items-center gap-1 transition-colors">
-            View All <ChevronRight size={16} />
-          </Link>
+          
+          {/* Attribution Requirement */}
+          <a 
+            href="https://sportscore.com/" 
+            rel="dofollow" 
+            target="_blank"
+            className="text-xs text-text-muted hover:text-surface-white transition-colors"
+          >
+            Data by SportScore
+          </a>
         </div>
 
         {/* Horizontal Scroll Container */}
         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
           {matches.map((match) => (
-            <div 
+            <Link 
+              href={`/live-scores/${match.id}`}
               key={match.id} 
-              className="shrink-0 w-[280px] bg-bg-slate border border-gray-700/50 rounded-xl p-4 flex flex-col gap-3 shadow-lg hover:border-brand-green/50 transition-colors cursor-pointer group"
+              className="shrink-0 w-[280px] bg-bg-slate border border-gray-700/50 rounded-xl p-4 flex flex-col gap-3 shadow-lg hover:border-brand-green/50 hover:shadow-brand transition-all cursor-pointer group"
             >
               {/* League & Minute */}
               <div className="flex justify-between items-center text-xs text-text-muted border-b border-gray-700/50 pb-2">
@@ -89,30 +115,30 @@ export default function LiveScoreTicker() {
               <div className="flex flex-col gap-2 mt-1">
                 {/* Home Team */}
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm ${match.homeScore > match.awayScore ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
-                    {match.homeTeam}
+                  <span className={`text-sm truncate pr-2 ${match.home_score > match.away_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                    {match.home_team}
                   </span>
-                  <span className={`text-lg font-black ${match.homeScore > match.awayScore ? 'text-brand-green' : 'text-surface-white'}`}>
-                    {match.homeScore}
+                  <span className={`text-lg font-black ${match.home_score > match.away_score ? 'text-brand-green' : 'text-surface-white'}`}>
+                    {match.home_score}
                   </span>
                 </div>
                 
                 {/* Away Team */}
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm ${match.awayScore > match.homeScore ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
-                    {match.awayTeam}
+                  <span className={`text-sm truncate pr-2 ${match.away_score > match.home_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                    {match.away_team}
                   </span>
-                  <span className={`text-lg font-black ${match.awayScore > match.homeScore ? 'text-brand-green' : 'text-surface-white'}`}>
-                    {match.awayScore}
+                  <span className={`text-lg font-black ${match.away_score > match.home_score ? 'text-brand-green' : 'text-surface-white'}`}>
+                    {match.away_score}
                   </span>
                 </div>
               </div>
               
-              {/* Hover Action Indicator */}
-              <div className="mt-2 w-full bg-bg-deep group-hover:bg-brand-green/10 text-center text-xs text-text-muted group-hover:text-brand-green py-1.5 rounded transition-colors flex items-center justify-center gap-1">
-                View Match <ChevronRight size={12} />
+              {/* Footer */}
+              <div className="mt-2 w-full bg-bg-deep group-hover:bg-brand-green/10 text-center text-[10px] text-text-muted group-hover:text-brand-green py-1.5 rounded transition-colors uppercase font-bold tracking-wider">
+                Match Details
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
