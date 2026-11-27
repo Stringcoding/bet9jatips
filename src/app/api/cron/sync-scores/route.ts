@@ -15,11 +15,7 @@ export async function GET(request: Request) {
     querySecret === cronSecret;
 
   if (!isAuthorized) {
-    return NextResponse.json({ error: "Unauthorized: Secret mismatch" }, { status: 401 });
-  }
-
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: "Missing Supabase Environment Variables" }, { status: 500 });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const supabase = createClient(
@@ -28,6 +24,7 @@ export async function GET(request: Request) {
   );
 
   try {
+    // Fetch from SportScore
     const res = await fetch(
       "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
       { cache: "no-store" }
@@ -38,27 +35,21 @@ export async function GET(request: Request) {
     }
 
     const json = await res.json();
-    const matches = json.matches || json.data || []; // Handle different root structures
+    
+    // DEBUG: Log the first item to Vercel logs so we can see the exact keys
+    console.log("First match from SportScore:", JSON.stringify(json.matches?.[0] || json.data?.[0] || json, null, 2));
 
-    // ✅ FILTER OUT INVALID MATCHES AND MAP FIELDS SAFELY
+    const matches = json.matches || json.data || []; 
+
     const formattedMatches = matches
-      .filter((match: any) => match && (match.id || match.matchId)) // Skip if no ID
+      .filter((match: any) => match && (match.id || match.matchId)) 
       .map((match: any) => {
-        // Safely extract the ID
         const matchId = match.id || match.matchId;
-        
-        // Safely extract teams (handling different API key formats)
         const home = match.homeTeam?.name || match.home?.name || "Home";
         const away = match.awayTeam?.name || match.away?.name || "Away";
-        
-        // Safely extract scores
         const homeScore = match.homeScore ?? match.home?.score ?? 0;
         const awayScore = match.awayScore ?? match.away?.score ?? 0;
-
-        // Safely extract league
         const league = match.competition?.name || match.league?.name || "Football";
-        
-        // Safely extract minute/time
         const minute = match.time || match.minute || "LIVE";
 
         return {
