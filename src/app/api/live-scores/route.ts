@@ -1,59 +1,65 @@
 import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const apiKey = process.env.SPORTMONKS_API_KEY;
+export async function GET(request: Request) {
+  // 1. Security Check (Supports both Header and Query Param)
+  const { searchParams } = new URL(request.url);
+  const querySecret = searchParams.get("secret");
+  const authHeader = request.headers.get("authorization");
+  
+  const cronSecret = process.env.CRON_SECRET;
+  
+  const isAuthorized = 
+    authHeader === `Bearer ${cronSecret}` || 
+    querySecret === cronSecret;
 
-  if (!apiKey) {
-    return NextResponse.json({ error: "API key missing" }, { status: 500 });
+  if (!isAuthorized) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  // Use Service Role Key to bypass RLS for backend writing
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
   try {
-    // 1. Fetch Live Matches from Sportmonks
-    // We include participants (teams) and league data
-    const response = await fetch(
-      `https://api.sportmonks.com/v3/football/livescores/inplay?api_token=${apiKey}&include=participants;league;scores`,
-      { cache: "no-store" } // Ensure fresh data on every request
+    // 2. Fetch live matches from SportScore
+    const res = await fetch(
+      "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
+      { cache: "no-store" }
     );
 
-    if (!response.ok) {
-      throw new Error("Failed to fetch from Sportmonks");
+    if (!res.ok) throw new Error("Failed to fetch from SportScore");
+
+    const { matches } = await res.json();
+
+    // 3. Format and Upsert into Supabase
+    const formattedMatches = matches.map((match: any) => ({
+      id: match.id.toString(),
+      league: match.competition?.name || "Football",
+      home_team: match.homeTeam?.name || "Home",
+      away_team: match.awayTeam?.name || "Away",
+      home_score: match.homeScore || 0,
+      away_score: match.awayScore || 0,
+      minute: match.time || "LIVE",
+      status: match.status || "inplay",
+      updated_at: new Date().toISOString(),
+    }));
+
+    if (formattedMatches.length > 0) {
+      const { error } = await supabase
+        .from("live_scores")
+        .upsert(formattedMatches, { onConflict: "id" });
+
+      if (error) throw error;
     }
 
-    const json = await response.json();
-    const rawMatches = json.data || [];
-
-    // 2. Format the data for our UI
-    const formattedMatches = rawMatches.map((match: any) => {
-      // Find home and away teams from the participants array
-      const homeTeam = match.participants?.find((p: any) => p.meta?.location === 'home')?.name || "Home";
-      const awayTeam = match.participants?.find((p: any) => p.meta?.location === 'away')?.name || "Away";
-      
-      // Get scores
-      const homeScore = match.scores?.find((s: any) => s.score?.participant === 'home' && s.description === 'CURRENT')?.score?.goals || 0;
-      const awayScore = match.scores?.find((s: any) => s.score?.participant === 'away' && s.description === 'CURRENT')?.score?.goals || 0;
-
-      // Get minute or match state
-      const minute = match.periods?.[0]?.minutes || match.minute || 0;
-
-      return {
-        id: match.id,
-        name: match.name,
-        state: match.state_id, // 2 = LIVE, etc.
-        minute: minute,
-        homeTeam: homeTeam,
-        awayTeam: awayTeam,
-        homeScore: homeScore,
-        awayScore: awayScore,
-        league: match.league?.name || "Unknown League",
-      };
-    });
-
-    return NextResponse.json({ matches: formattedMatches });
-    
+    return NextResponse.json({ success: true, count: formattedMatches.length });
   } catch (error: any) {
-    console.error("Live Score API Error:", error.message);
-    return NextResponse.json({ error: "Failed to load live scores" }, { status: 500 });
+    console.error("Sync Error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
