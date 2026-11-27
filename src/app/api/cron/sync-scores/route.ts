@@ -15,24 +15,31 @@ export async function GET(request: Request) {
     querySecret === cronSecret;
 
   if (!isAuthorized) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: "Unauthorized: Secret mismatch" }, { status: 401 });
+  }
+
+  // ✅ WE USE THE SERVICE ROLE KEY HERE, NOT THE PUBLISHABLE KEY
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: "Missing Supabase Environment Variables (URL or SERVICE_ROLE_KEY)" }, { status: 500 });
   }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY! 
   );
 
   try {
-    // ✅ SPORTSCORE API CALL
     const res = await fetch(
       "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
       { cache: "no-store" }
     );
 
-    if (!res.ok) throw new Error("Failed to fetch from SportScore");
+    if (!res.ok) {
+      return NextResponse.json({ error: `SportScore API returned ${res.status}` }, { status: 500 });
+    }
 
-    const { matches } = await res.json();
+    const json = await res.json();
+    const matches = json.matches || [];
 
     const formattedMatches = matches.map((match: any) => ({
       id: match.id.toString(),
@@ -51,12 +58,13 @@ export async function GET(request: Request) {
         .from("live_scores")
         .upsert(formattedMatches, { onConflict: "id" });
 
-      if (error) throw error;
+      if (error) {
+        return NextResponse.json({ error: `Supabase Error: ${error.message}` }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true, count: formattedMatches.length });
   } catch (error: any) {
-    console.error("Sync Error:", error.message);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: `System Error: ${error.message}` }, { status: 500 });
   }
 }
