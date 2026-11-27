@@ -18,14 +18,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized: Secret mismatch" }, { status: 401 });
   }
 
-  // ✅ WE USE THE SERVICE ROLE KEY HERE, NOT THE PUBLISHABLE KEY
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    return NextResponse.json({ error: "Missing Supabase Environment Variables (URL or SERVICE_ROLE_KEY)" }, { status: 500 });
+    return NextResponse.json({ error: "Missing Supabase Environment Variables" }, { status: 500 });
   }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY! 
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {
@@ -39,19 +38,41 @@ export async function GET(request: Request) {
     }
 
     const json = await res.json();
-    const matches = json.matches || [];
+    const matches = json.matches || json.data || []; // Handle different root structures
 
-    const formattedMatches = matches.map((match: any) => ({
-      id: match.id.toString(),
-      league: match.competition?.name || "Football",
-      home_team: match.homeTeam?.name || "Home",
-      away_team: match.awayTeam?.name || "Away",
-      home_score: match.homeScore || 0,
-      away_score: match.awayScore || 0,
-      minute: match.time || "LIVE",
-      status: match.status || "inplay",
-      updated_at: new Date().toISOString(),
-    }));
+    // ✅ FILTER OUT INVALID MATCHES AND MAP FIELDS SAFELY
+    const formattedMatches = matches
+      .filter((match: any) => match && (match.id || match.matchId)) // Skip if no ID
+      .map((match: any) => {
+        // Safely extract the ID
+        const matchId = match.id || match.matchId;
+        
+        // Safely extract teams (handling different API key formats)
+        const home = match.homeTeam?.name || match.home?.name || "Home";
+        const away = match.awayTeam?.name || match.away?.name || "Away";
+        
+        // Safely extract scores
+        const homeScore = match.homeScore ?? match.home?.score ?? 0;
+        const awayScore = match.awayScore ?? match.away?.score ?? 0;
+
+        // Safely extract league
+        const league = match.competition?.name || match.league?.name || "Football";
+        
+        // Safely extract minute/time
+        const minute = match.time || match.minute || "LIVE";
+
+        return {
+          id: matchId.toString(),
+          league: league,
+          home_team: home,
+          away_team: away,
+          home_score: Number(homeScore),
+          away_score: Number(awayScore),
+          minute: minute.toString(),
+          status: match.status || "inplay",
+          updated_at: new Date().toISOString(),
+        };
+      });
 
     if (formattedMatches.length > 0) {
       const { error } = await supabase
