@@ -4,20 +4,27 @@ import { createClient } from "@supabase/supabase-js";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
-  // 1. Security Check: Ensure only your cron job can trigger this
+  const { searchParams } = new URL(request.url);
+  const querySecret = searchParams.get("secret");
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  
+  const cronSecret = process.env.CRON_SECRET;
+  
+  const isAuthorized = 
+    authHeader === `Bearer ${cronSecret}` || 
+    querySecret === cronSecret;
+
+  if (!isAuthorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  // Use a service role key to bypass RLS for writing
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
   try {
-    // 2. Fetch live matches from SportScore
+    // ✅ SPORTSCORE API CALL
     const res = await fetch(
       "https://sportscore.com/api/widget/matches/?sport=football&limit=15&src=bet9jatips",
       { cache: "no-store" }
@@ -27,7 +34,6 @@ export async function GET(request: Request) {
 
     const { matches } = await res.json();
 
-    // 3. Format and Upsert into Supabase
     const formattedMatches = matches.map((match: any) => ({
       id: match.id.toString(),
       league: match.competition?.name || "Football",
