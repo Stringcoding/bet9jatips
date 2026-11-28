@@ -26,7 +26,6 @@ const StatBar = ({
   const homeLeading = homeVal > awayVal;
   const awayLeading = awayVal > homeVal;
 
-  // Use the percentage provided by the API for the bar widths
   const homeWidth = homePct || 50;
   const awayWidth = awayPct || 50;
 
@@ -44,7 +43,6 @@ const StatBar = ({
         </span>
       </div>
 
-      {/* Split Progress Track */}
       <div className="flex h-1.5 w-full rounded-sm overflow-hidden bg-bg-deep gap-0.5">
         <div
           className={`h-full transition-all duration-500 rounded-l-sm ${
@@ -96,7 +94,6 @@ export default async function MatchDetailsPage({
     );
     if (res.ok) {
       const json = await res.json();
-      // ✅ MAPPED TO THE EXACT API RESPONSE
       stats = json.match?.stats || [];
     }
   } catch (error) {
@@ -139,7 +136,20 @@ export default async function MatchDetailsPage({
           {/* League & Live Status Header */}
           <div className="bg-bg-slate bg-gradient-to-r from-bg-deep/50 to-bg-slate px-4 py-2.5 border-b border-gray-700/50 flex justify-between items-center">
             <div className="flex items-center gap-2 truncate pr-2">
-              <Trophy size={14} className="text-brand-yellow shrink-0" />
+              
+              {/* REPLACED TROPHY WITH COUNTRY LOGO */}
+              <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
+                {match.country_logo ? (
+                  <img
+                    src={match.country_logo}
+                    alt="Country"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Trophy size={12} className="text-brand-yellow shrink-0" />
+                )}
+              </div>
+
               <span className="text-surface-white font-bold uppercase tracking-wider text-[11px] sm:text-xs truncate">
                 {match.league}
               </span>
@@ -254,7 +264,6 @@ export default async function MatchDetailsPage({
         {/* Match Statistics Panel */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl">
           
-          {/* Section Header with Green Accent Bar */}
           <div className="bg-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 bg-brand-green rounded-full" />
@@ -264,7 +273,6 @@ export default async function MatchDetailsPage({
               </h3>
             </div>
 
-            {/* Color Legend */}
             <div className="flex items-center gap-3 text-[10px] font-bold uppercase text-text-muted">
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-brand-green" /> Home
