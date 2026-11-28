@@ -8,6 +8,7 @@ import Link from "next/link";
 interface LiveMatch {
   id: string;
   league: string;
+  country_logo: string | null; // <-- Added Country Logo
   home_team: string;
   away_team: string;
   home_logo: string | null;
@@ -101,9 +102,22 @@ export default function LiveScoreTicker() {
               key={match.id} 
               className="shrink-0 w-[280px] bg-bg-slate border border-gray-700/50 rounded-xl p-4 flex flex-col gap-3 shadow-lg hover:border-brand-green/50 hover:shadow-brand transition-all cursor-pointer group"
             >
-              {/* League & Minute */}
+              {/* League, Country Logo & Minute */}
               <div className="flex justify-between items-center text-xs text-text-muted border-b border-gray-700/50 pb-2">
-                <span className="truncate max-w-[150px] font-medium tracking-wide">{match.league}</span>
+                <div className="flex items-center gap-1.5 truncate max-w-[160px]">
+                  {/* COUNTRY LOGO */}
+                  {match.country_logo && (
+                    <div className="w-3.5 h-3.5 rounded-full overflow-hidden shrink-0 border border-gray-600">
+                      <img 
+                        src={match.country_logo} 
+                        alt="Flag" 
+                        className="w-full h-full object-cover" 
+                      />
+                    </div>
+                  )}
+                  <span className="truncate font-medium tracking-wide">{match.league}</span>
+                </div>
+                
                 <span className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded tabular-nums ${
                   match.minute === "FT" 
                     ? "text-text-muted bg-bg-deep" 
