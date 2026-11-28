@@ -275,6 +275,7 @@ export default async function MatchDetailsPage({
   let stats: NormalizedStat[] = [];
   let incidents: MatchIncident[] = [];
   let roundLabel: string | null = null;
+  let apiMatch: any = null;
 
   try {
     const res = await fetch(
@@ -285,29 +286,56 @@ export default async function MatchDetailsPage({
     );
     if (res.ok) {
       const json = await res.json();
+      apiMatch = json.match ?? null;
+
       const rawSource =
-        json.match?.stats ??
-        json.match?.statistics ??
+        apiMatch?.stats ??
+        apiMatch?.statistics ??
         json.stats ??
         json.statistics ??
         [];
       stats = normalizeStats(rawSource);
-      incidents = normalizeIncidents(json.match?.incidents ?? json.incidents);
-      roundLabel = json.match?.round ?? null;
+      incidents = normalizeIncidents(apiMatch?.incidents ?? json.incidents);
+      roundLabel = apiMatch?.round ?? null;
     }
   } catch (error) {
     console.error("Failed to fetch match details", error);
   }
 
-  const isFinished = match.minute === "FT";
-  const isHalfTime = match.minute === "HT";
+  const liveHomeScore =
+    apiMatch?.home_score !== undefined &&
+    apiMatch?.home_score !== null &&
+    apiMatch?.home_score !== ""
+      ? Number(apiMatch.home_score)
+      : Number(match.home_score) || 0;
+
+  const liveAwayScore =
+    apiMatch?.away_score !== undefined &&
+    apiMatch?.away_score !== null &&
+    apiMatch?.away_score !== ""
+      ? Number(apiMatch.away_score)
+      : Number(match.away_score) || 0;
+
+  const liveMinute =
+    apiMatch?.live_minute !== undefined &&
+    apiMatch?.live_minute !== null &&
+    apiMatch?.live_minute !== ""
+      ? `${apiMatch.live_minute}'`
+      : apiMatch?.status === "finished"
+      ? "FT"
+      : match.minute;
+
+  const isFinished = liveMinute === "FT";
+  const isHalfTime = liveMinute === "HT";
   const isLive = !isFinished && !isHalfTime;
 
   const statusBadgeText = isFinished
     ? "FT"
     : isHalfTime
     ? "HT"
-    : `${match.minute}'`;
+    : String(liveMinute).endsWith("'")
+    ? String(liveMinute)
+    : `${liveMinute}'`;
 
   return (
     <div className="min-h-screen bg-bg-deep text-surface-white pt-4 pb-16 selection:bg-brand-green selection:text-white font-sans">
@@ -396,24 +424,24 @@ export default async function MatchDetailsPage({
                 <div className="bg-bg-deep border border-gray-700/50 rounded-xl px-3.5 py-2 sm:px-5 sm:py-3 shadow-inner flex items-center gap-2 sm:gap-3 tabular-nums">
                   <span
                     className={`text-3xl sm:text-4xl font-black ${
-                      match.home_score > match.away_score
+                      liveHomeScore > liveAwayScore
                         ? "text-brand-green"
                         : "text-surface-white"
                     }`}
                   >
-                    {match.home_score}
+                    {liveHomeScore}
                   </span>
                   <span className="text-text-muted text-xl sm:text-2xl font-bold">
                     -
                   </span>
                   <span
                     className={`text-3xl sm:text-4xl font-black ${
-                      match.away_score > match.home_score
+                      liveAwayScore > liveHomeScore
                         ? "text-brand-yellow"
                         : "text-surface-white"
                     }`}
                   >
-                    {match.away_score}
+                    {liveAwayScore}
                   </span>
                 </div>
 
