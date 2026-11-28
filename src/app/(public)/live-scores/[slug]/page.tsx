@@ -80,16 +80,19 @@ export default async function MatchDetailsPage({
     notFound();
   }
 
-  // Reconstruct slug for API
-  let rawSlug = matchId.startsWith("-") ? matchId.substring(1) : matchId;
-  rawSlug = rawSlug.endsWith("-") ? rawSlug.slice(0, -1) : rawSlug;
-  const matchSlug = rawSlug.split("-football-match-")[1] || rawSlug;
+  // ✅ FIXED SLUG RECONSTRUCTION
+  let rawSlug = matchId
+    .replace(/^-/, "")
+    .replace(/-$/, "");
+  const matchSlug = rawSlug
+    .replace(/^football-match-/, "")
+    .replace(/-[^-]+$/, "");
 
   // Fetch Stats
   let stats: any[] = [];
   try {
     const res = await fetch(
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${matchSlug}`,
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(matchSlug)}`,
       { cache: "no-store" }
     );
     if (res.ok) {
@@ -137,7 +140,7 @@ export default async function MatchDetailsPage({
           <div className="bg-bg-slate bg-gradient-to-r from-bg-deep/50 to-bg-slate px-4 py-2.5 border-b border-gray-700/50 flex justify-between items-center">
             <div className="flex items-center gap-2 truncate pr-2">
               
-              {/* REPLACED TROPHY WITH COUNTRY LOGO */}
+              {/* COUNTRY LOGO */}
               <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
                 {match.country_logo ? (
                   <img
