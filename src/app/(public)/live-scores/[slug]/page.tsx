@@ -96,8 +96,8 @@ export default async function MatchDetailsPage({
     );
     if (res.ok) {
       const json = await res.json();
-      // ✅ CORRECTLY MAP THE STATS FROM THE API RESPONSE
-      stats = json.match?.stats || []; 
+      // ✅ MAPPED TO THE EXACT API RESPONSE
+      stats = json.match?.stats || [];
     }
   } catch (error) {
     console.error("Failed to fetch match stats", error);
@@ -114,14 +114,14 @@ export default async function MatchDetailsPage({
     : `${match.minute}'`;
 
   return (
-    <div className="min-h-screen bg-bg-deep text-surface-white pt-4 pb-16 selection:bg-brand-green selection:text-white">
+    <div className="min-h-screen bg-bg-deep text-surface-white pt-4 pb-16 selection:bg-brand-green selection:text-white font-sans">
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-5">
         
         {/* Top Navigation Bar */}
         <div className="flex items-center justify-between mb-4">
           <Link
             href="/live-scores"
-            className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white bg-bg-slate hover:bg-gray-700 border border-gray-700/50 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold"
+            className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white bg-bg-slate hover:bg-gray-700 border border-gray-700/50 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold tracking-wide"
           >
             <ArrowLeft size={14} className="text-brand-green" />
             <span>Live Center</span>
