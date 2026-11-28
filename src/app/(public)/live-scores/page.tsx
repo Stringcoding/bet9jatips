@@ -1,19 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import {
-  Radio,
-  ChevronRight,
-  Trophy,
-  ArrowLeft,
-  Flame,
-  CalendarClock,
-} from "lucide-react";
+import { Radio, ChevronRight, Activity, ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 export default async function LiveScoresPage() {
   const supabase = await createClient();
-
+  
   // Fetch all matches ordered by league then date
   const { data: matches } = await supabase
     .from("live_scores")
@@ -31,251 +24,137 @@ export default async function LiveScoresPage() {
   }, {});
 
   const leagues = Object.keys(groupedMatches).sort();
-  const totalLiveCount = (matches || []).filter(
-    (m: any) => m.minute !== "FT"
-  ).length;
 
   return (
-    <div className="min-h-screen bg-[#0B0E11] text-white pt-4 sm:pt-8 pb-20 selection:bg-[#00A859] selection:text-white">
-      <div className="max-w-4xl mx-auto px-3 sm:px-6">
+    <div className="min-h-screen bg-bg-deep pt-8 pb-20">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         
-        {/* Top Navigation & Live Summary Bar */}
-        <div className="flex items-center justify-between mb-4">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white bg-[#161B22] hover:bg-[#1E242D] border border-white/10 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold"
-          >
-            <ArrowLeft size={14} className="text-[#00A859]" />
-            <span>Home</span>
-          </Link>
-
-          <div className="flex items-center gap-2 bg-[#161B22] border border-white/10 px-3 py-1.5 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-[#00E676] animate-pulse" />
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-gray-300 tabular-nums">
-              {totalLiveCount} Live Events
-            </span>
-          </div>
-        </div>
-
-        {/* Sportsbook Lobby Header Banner */}
-        <div className="bg-gradient-to-r from-[#0F291E] via-[#161B22] to-[#161B22] rounded-xl border border-white/10 p-4 sm:p-6 mb-6 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-[#00A859] text-[#0B0E11] text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
-                In-Play
-              </span>
-              <span className="text-xs font-bold text-[#FBBF24] flex items-center gap-1">
-                <Flame size={13} /> Real-Time Feed
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Live Score Center
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-surface-white flex items-center gap-3">
+              <Activity className="text-brand-green w-8 h-8" />
+              Live Center
             </h1>
-            <p className="text-gray-400 text-xs sm:text-sm mt-1">
-              Tap any fixture for live match tracker &amp; in-depth statistics.
+            <p className="text-text-muted text-sm sm:text-base mt-2">
+              Real-time football scores, updated instantly.
             </p>
           </div>
-
-          <div className="flex items-center gap-3 bg-[#0B0E11]/80 border border-white/10 px-3.5 py-2.5 rounded-lg self-start sm:self-auto">
-            <CalendarClock size={18} className="text-[#00A859]" />
-            <div className="text-left">
-              <div className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Active Leagues
-              </div>
-              <div className="text-sm font-black text-white tabular-nums">
-                {leagues.length} Competitions
-              </div>
-            </div>
-          </div>
+          
+          <Link 
+            href="/" 
+            className="flex items-center gap-2 text-xs font-bold text-text-muted hover:text-surface-white bg-bg-slate hover:bg-gray-700 border border-gray-700/50 px-3 py-1.5 rounded-lg transition-all"
+          >
+            <ArrowLeft size={14} className="text-brand-green" />
+            Back to Home
+          </Link>
         </div>
 
         {/* Matches Container */}
         {leagues.length === 0 ? (
-          <div className="text-center py-16 bg-[#161B22] rounded-xl border border-white/10 px-4">
-            <div className="w-12 h-12 rounded-full bg-[#0B0E11] border border-white/10 flex items-center justify-center mx-auto mb-3">
-              <Radio className="w-6 h-6 text-[#00A859] animate-pulse" />
-            </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-white mb-1">
-              No live matches at the moment
-            </h2>
-            <p className="text-gray-400 text-xs sm:text-sm max-w-sm mx-auto">
-              Fixtures will populate automatically as soon as matches kick off.
-            </p>
+          <div className="text-center py-20 bg-bg-slate rounded-2xl border border-gray-800">
+            <Radio className="w-12 h-12 text-text-muted mx-auto mb-4 animate-pulse" />
+            <h2 className="text-xl font-bold text-surface-white mb-2">No matches right now</h2>
+            <p className="text-text-muted text-sm">Check back later when games are live.</p>
           </div>
         ) : (
-          <div className="flex flex-col gap-5">
-            {leagues.map((league) => {
-              const leagueMatches = groupedMatches[league];
-
-              return (
-                <div
-                  key={league}
-                  className="bg-[#161B22] rounded-xl border border-white/10 overflow-hidden shadow-xl"
-                >
-                  {/* Bet9ja-style League Strip Header */}
-                  <div className="bg-[#1C222B] px-3.5 sm:px-5 py-2.5 border-b border-white/10 flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="w-1 h-4 bg-[#00A859] rounded-full shrink-0" />
-                      <Trophy size={14} className="text-[#FBBF24] shrink-0" />
-                      <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-gray-100 truncate">
-                        {league}
-                      </h2>
-                    </div>
-
-                    <span className="text-[10px] font-extrabold text-gray-300 bg-[#0B0E11] border border-white/10 px-2 py-0.5 rounded shrink-0 tabular-nums">
-                      {leagueMatches.length}{" "}
-                      {leagueMatches.length === 1 ? "Match" : "Matches"}
-                    </span>
-                  </div>
-
-                  {/* Match Rows */}
-                  <div className="flex flex-col divide-y divide-white/[0.06]">
-                    {leagueMatches.map((match: any) => {
-                      const isFinished = match.minute === "FT";
-                      const isHalfTime = match.minute === "HT";
-                      const isLive = !isFinished && !isHalfTime;
-                      const homeWinning = match.home_score > match.away_score;
-                      const awayWinning = match.away_score > match.home_score;
-
-                      return (
-                        <Link
-                          key={match.id}
-                          href={`/live-scores/${match.id}`}
-                          className="flex items-center justify-between px-3.5 py-3 sm:px-5 sm:py-3.5 hover:bg-[#1D242E] active:bg-[#222A36] transition-colors group gap-3"
-                        >
-                          {/* Left: Match Minute / Status Badge */}
-                          <div className="w-12 sm:w-14 shrink-0 flex flex-col items-center justify-center border-r border-white/[0.06] pr-2.5 sm:pr-3">
-                            {isLive ? (
-                              <div className="flex items-center gap-1 text-[#00E676] font-extrabold text-xs tabular-nums">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#00E676] animate-ping" />
-                                <span>{match.minute}&apos;</span>
-                              </div>
-                            ) : isHalfTime ? (
-                              <span className="text-[11px] font-extrabold text-[#FBBF24] bg-[#FBBF24]/10 border border-[#FBBF24]/30 px-1.5 py-0.5 rounded">
-                                HT
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-bold text-gray-400 bg-white/5 px-1.5 py-0.5 rounded">
-                                FT
-                              </span>
-                            )}
-                            <span className="text-[9px] uppercase tracking-wider text-gray-500 font-semibold mt-1">
-                              {isLive ? "Live" : isHalfTime ? "Break" : "Ended"}
-                            </span>
-                          </div>
-
-                          {/* Middle: Stacked Teams (Clean & Readable on Any Mobile Width) */}
-                          <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                            {/* Home Team Row */}
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-5 h-5 rounded-full bg-[#0B0E11] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
-                                {match.home_logo ? (
-                                  <img
-                                    src={match.home_logo}
-                                    alt={match.home_team}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <span className="text-[10px] font-black text-[#00A859]">
-                                    {match.home_team.charAt(0)}
-                                  </span>
-                                )}
-                              </div>
-                              <span
-                                className={`text-xs sm:text-sm truncate ${
-                                  homeWinning
-                                    ? "text-white font-extrabold"
-                                    : "text-gray-300 font-medium"
-                                }`}
-                              >
-                                {match.home_team}
-                              </span>
-                            </div>
-
-                            {/* Away Team Row */}
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-5 h-5 rounded-full bg-[#0B0E11] border border-white/10 flex items-center justify-center shrink-0 overflow-hidden p-0.5">
-                                {match.away_logo ? (
-                                  <img
-                                    src={match.away_logo}
-                                    alt={match.away_team}
-                                    className="w-full h-full object-contain"
-                                  />
-                                ) : (
-                                  <span className="text-[10px] font-black text-[#FBBF24]">
-                                    {match.away_team.charAt(0)}
-                                  </span>
-                                )}
-                              </div>
-                              <span
-                                className={`text-xs sm:text-sm truncate ${
-                                  awayWinning
-                                    ? "text-white font-extrabold"
-                                    : "text-gray-300 font-medium"
-                                }`}
-                              >
-                                {match.away_team}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Right: Sportsbook Score Pill & Stats Trigger */}
-                          <div className="flex items-center gap-2.5 sm:gap-4 shrink-0">
-                            <div className="bg-[#0B0E11] border border-white/10 rounded-lg px-2.5 py-1.5 flex flex-col items-center justify-center min-w-[36px] tabular-nums shadow-inner">
-                              <span
-                                className={`text-xs sm:text-sm font-black leading-tight ${
-                                  homeWinning
-                                    ? "text-[#00E676]"
-                                    : isLive
-                                    ? "text-white"
-                                    : "text-gray-300"
-                                }`}
-                              >
-                                {match.home_score}
-                              </span>
-                              <div className="w-3 h-[1px] bg-white/10 my-0.5" />
-                              <span
-                                className={`text-xs sm:text-sm font-black leading-tight ${
-                                  awayWinning
-                                    ? "text-[#FBBF24]"
-                                    : isLive
-                                    ? "text-white"
-                                    : "text-gray-300"
-                                }`}
-                              >
-                                {match.away_score}
-                              </span>
-                            </div>
-
-                            <div className="flex items-center gap-1 text-gray-500 group-hover:text-[#00E676] transition-colors">
-                              <span className="hidden md:inline text-[11px] font-bold uppercase tracking-wider">
-                                Stats
-                              </span>
-                              <ChevronRight
-                                size={18}
-                                className="group-hover:translate-x-0.5 transition-transform"
-                              />
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                  </div>
+          <div className="flex flex-col gap-6">
+            {leagues.map((league) => (
+              <div key={league} className="bg-bg-slate rounded-2xl border border-gray-700/50 overflow-hidden shadow-xl">
+                
+                {/* League Header */}
+                <div className="bg-bg-slate bg-gradient-to-r from-bg-deep/50 to-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-surface-white flex items-center gap-2 uppercase tracking-wider">
+                    <span className="w-1 h-4 bg-brand-green rounded-full"></span>
+                    {league}
+                  </h2>
+                  <span className="text-[10px] font-bold text-text-muted bg-bg-deep px-2 py-0.5 rounded border border-gray-700/50">
+                    {groupedMatches[league].length} Matches
+                  </span>
                 </div>
-              );
-            })}
+
+                {/* Match List */}
+                <div className="flex flex-col divide-y divide-gray-700/30">
+                  {groupedMatches[league].map((match: any) => {
+                    const isFinished = match.minute === "FT";
+                    const isHalfTime = match.minute === "HT";
+                    const isLive = !isFinished && !isHalfTime;
+                    const statusBadgeText = isFinished ? "FT" : isHalfTime ? "HT" : `${match.minute}'`;
+
+                    return (
+                      <Link 
+                        key={match.id} 
+                        href={`/live-scores/${match.id}`}
+                        className="flex items-center justify-between p-3 sm:px-5 hover:bg-bg-deep/60 transition-colors group"
+                      >
+                        {/* Home Team */}
+                        <div className="flex-1 flex justify-end items-center gap-3 text-right">
+                          <span className={`text-sm truncate ${match.home_score > match.away_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                            {match.home_team}
+                          </span>
+                          <div className="w-7 h-7 bg-bg-deep rounded-full flex items-center justify-center border border-gray-700/50 shrink-0 overflow-hidden p-1">
+                            {match.home_logo ? (
+                              <img src={match.home_logo} alt={match.home_team} className="w-full h-full object-contain" />
+                            ) : (
+                              <span className="text-[10px] font-bold text-brand-green">{match.home_team.charAt(0)}</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Score & Time */}
+                        <div className="px-3 sm:px-5 flex flex-col items-center justify-center min-w-[80px]">
+                          <div className="flex items-center gap-2 text-lg font-black text-surface-white bg-bg-deep px-3 py-1 rounded-lg border border-gray-700/50">
+                            <span className={match.home_score > match.away_score ? 'text-brand-green' : ''}>{match.home_score}</span>
+                            <span className="text-gray-600 text-sm">-</span>
+                            <span className={match.away_score > match.home_score ? 'text-brand-yellow' : ''}>{match.away_score}</span>
+                          </div>
+                          <span className={`text-[10px] font-bold mt-1 px-1.5 py-0.5 rounded ${
+                            isLive 
+                              ? "bg-brand-green/20 text-brand-green animate-pulse" 
+                              : isHalfTime 
+                              ? "bg-brand-yellow/20 text-brand-yellow"
+                              : "bg-gray-800 text-gray-400"
+                          }`}>
+                            {isLive ? `LIVE • ${statusBadgeText}` : statusBadgeText}
+                          </span>
+                        </div>
+
+                        {/* Away Team */}
+                        <div className="flex-1 flex justify-start items-center gap-3 text-left">
+                          <div className="w-7 h-7 bg-bg-deep rounded-full flex items-center justify-center border border-gray-700/50 shrink-0 overflow-hidden p-1">
+                            {match.away_logo ? (
+                              <img src={match.away_logo} alt={match.away_team} className="w-full h-full object-contain" />
+                            ) : (
+                              <span className="text-[10px] font-bold text-brand-yellow">{match.away_team.charAt(0)}</span>
+                            )}
+                          </div>
+                          <span className={`text-sm truncate ${match.away_score > match.home_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                            {match.away_team}
+                          </span>
+                        </div>
+
+                        {/* Arrow */}
+                        <div className="hidden sm:flex ml-4 text-gray-600 group-hover:text-brand-green transition-colors">
+                          <ChevronRight size={18} />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
         {/* SportScore Attribution (Required by API) */}
-        <div className="mt-10 text-center border-t border-white/10 pt-5">
-          <p className="text-xs text-gray-500">
+        <div className="mt-12 text-center border-t border-gray-800 pt-6">
+          <p className="text-xs text-text-muted">
             Live data provided by{" "}
-            <a
-              href="https://sportscore.com/"
-              rel="dofollow"
+            <a 
+              href="https://sportscore.com/" 
+              rel="dofollow" 
               target="_blank"
-              className="text-[#00A859] hover:text-[#00E676] font-bold transition-colors"
+              className="text-brand-green font-bold hover:underline"
             >
               SportScore
             </a>
