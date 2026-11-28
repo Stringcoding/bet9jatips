@@ -36,14 +36,14 @@ export default async function LiveScoresPage() {
   ).length;
 
   return (
-    <div className="min-h-screen bg-bg-deep text-surface-white pt-4 sm:pt-8 pb-20 selection:bg-brand-green selection:text-surface-white">
+    <div className="min-h-screen bg-bg-deep text-surface-white pt-4 sm:pt-8 pb-20 selection:bg-brand-green selection:text-surface-white font-sans">
       <div className="max-w-4xl mx-auto px-3 sm:px-6">
         
         {/* Top Navigation & Live Summary Bar */}
         <div className="flex items-center justify-between mb-4">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white bg-bg-slate hover:bg-gray-700 border border-gray-700/50 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold"
+            className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white bg-bg-slate hover:bg-gray-700 border border-gray-700/50 px-3 py-1.5 rounded-lg transition-all text-xs font-semibold tracking-wide"
           >
             <ArrowLeft size={14} className="text-brand-green" />
             <span>Home</span>
@@ -51,7 +51,7 @@ export default async function LiveScoresPage() {
 
           <div className="flex items-center gap-2 bg-bg-slate border border-gray-700/50 px-3 py-1.5 rounded-lg">
             <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-text-muted tabular-nums">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-text-muted tabular-nums">
               {totalLiveCount} Live Events
             </span>
           </div>
@@ -64,7 +64,7 @@ export default async function LiveScoresPage() {
               <span className="bg-brand-green text-bg-deep text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
                 In-Play
               </span>
-              <span className="text-xs font-bold text-brand-yellow flex items-center gap-1">
+              <span className="text-xs font-bold text-brand-yellow tracking-wide flex items-center gap-1">
                 <Flame size={13} /> Real-Time Feed
               </span>
             </div>
@@ -79,7 +79,7 @@ export default async function LiveScoresPage() {
           <div className="flex items-center gap-3 bg-bg-deep/80 border border-gray-700/50 px-3.5 py-2.5 rounded-lg self-start sm:self-auto">
             <CalendarClock size={18} className="text-brand-green" />
             <div className="text-left">
-              <div className="text-[10px] uppercase tracking-wider text-text-muted font-bold">
+              <div className="text-[10px] uppercase tracking-widest text-text-muted font-bold">
                 Active Leagues
               </div>
               <div className="text-sm font-black text-surface-white tabular-nums">
@@ -95,7 +95,7 @@ export default async function LiveScoresPage() {
             <div className="w-12 h-12 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center mx-auto mb-3">
               <Radio className="w-6 h-6 text-brand-green animate-pulse" />
             </div>
-            <h2 className="text-base sm:text-lg font-extrabold text-surface-white mb-1">
+            <h2 className="text-base sm:text-lg font-extrabold text-surface-white mb-1 tracking-tight">
               No live matches at the moment
             </h2>
             <p className="text-text-muted text-xs sm:text-sm max-w-sm mx-auto">
@@ -117,12 +117,12 @@ export default async function LiveScoresPage() {
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="w-1 h-4 bg-brand-green rounded-full shrink-0" />
                       <Trophy size={14} className="text-brand-yellow shrink-0" />
-                      <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-surface-white truncate">
+                      <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-surface-white truncate">
                         {league}
                       </h2>
                     </div>
 
-                    <span className="text-[10px] font-extrabold text-text-muted bg-bg-deep border border-gray-700/50 px-2 py-0.5 rounded shrink-0 tabular-nums">
+                    <span className="text-[10px] font-extrabold text-text-muted bg-bg-deep border border-gray-700/50 px-2 py-0.5 rounded shrink-0 tabular-nums tracking-wide">
                       {leagueMatches.length}{" "}
                       {leagueMatches.length === 1 ? "Match" : "Matches"}
                     </span>
@@ -159,7 +159,7 @@ export default async function LiveScoresPage() {
                                 FT
                               </span>
                             )}
-                            <span className="text-[9px] uppercase tracking-wider text-text-muted/70 font-semibold mt-1">
+                            <span className="text-[9px] uppercase tracking-widest text-text-muted/70 font-semibold mt-1">
                               {isLive ? "Live" : isHalfTime ? "Break" : "Ended"}
                             </span>
                           </div>
@@ -248,7 +248,7 @@ export default async function LiveScoresPage() {
                             </div>
 
                             <div className="flex items-center gap-1 text-gray-600 group-hover:text-brand-green transition-colors">
-                              <span className="hidden md:inline text-[11px] font-bold uppercase tracking-wider">
+                              <span className="hidden md:inline text-[11px] font-bold uppercase tracking-widest">
                                 Stats
                               </span>
                               <ChevronRight
@@ -269,7 +269,7 @@ export default async function LiveScoresPage() {
 
         {/* SportScore Attribution (Required by API) */}
         <div className="mt-10 text-center border-t border-gray-700/50 pt-5">
-          <p className="text-xs text-text-muted">
+          <p className="text-xs text-text-muted tracking-wide">
             Live data provided by{" "}
             <a
               href="https://sportscore.com/"
