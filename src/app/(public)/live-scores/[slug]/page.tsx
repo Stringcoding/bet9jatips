@@ -81,9 +81,7 @@ export default async function MatchDetailsPage({
   }
 
   // ✅ FIXED SLUG RECONSTRUCTION
-  let rawSlug = matchId
-    .replace(/^-/, "")
-    .replace(/-$/, "");
+  let rawSlug = matchId.replace(/^-/, "").replace(/-$/, "");
   const matchSlug = rawSlug
     .replace(/^football-match-/, "")
     .replace(/-[^-]+$/, "");
@@ -91,8 +89,9 @@ export default async function MatchDetailsPage({
   // Fetch Stats
   let stats: any[] = [];
   try {
+    // ✅ ADDED &include=stats TO FORCE FULL STATS PAYLOAD
     const res = await fetch(
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(matchSlug)}`,
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(matchSlug)}&include=stats`,
       { cache: "no-store" }
     );
     if (res.ok) {
