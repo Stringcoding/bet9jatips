@@ -10,6 +10,8 @@ interface LiveMatch {
   league: string;
   home_team: string;
   away_team: string;
+  home_logo: string | null; // <-- Added
+  away_logo: string | null; // <-- Added
   home_score: number;
   away_score: number;
   minute: string;
@@ -34,7 +36,7 @@ export default function LiveScoreTicker() {
 
     fetchScores();
 
-    // Realtime subscription to update scores instantly without refresh
+    // Realtime subscription to update scores instantly
     const channel = supabase
       .channel("live-score-changes")
       .on(
@@ -115,9 +117,18 @@ export default function LiveScoreTicker() {
               <div className="flex flex-col gap-2 mt-1">
                 {/* Home Team */}
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm truncate pr-2 ${match.home_score > match.away_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
-                    {match.home_team}
-                  </span>
+                  <div className="flex items-center gap-2 truncate pr-2">
+                    <div className="w-6 h-6 rounded-full bg-bg-deep flex items-center justify-center border border-gray-700 overflow-hidden shrink-0">
+                      {match.home_logo ? (
+                        <img src={match.home_logo} alt={match.home_team} className="w-full h-full object-contain p-0.5" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400">{match.home_team.charAt(0)}</span>
+                      )}
+                    </div>
+                    <span className={`text-sm ${match.home_score > match.away_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                      {match.home_team}
+                    </span>
+                  </div>
                   <span className={`text-lg font-black ${match.home_score > match.away_score ? 'text-brand-green' : 'text-surface-white'}`}>
                     {match.home_score}
                   </span>
@@ -125,9 +136,18 @@ export default function LiveScoreTicker() {
                 
                 {/* Away Team */}
                 <div className="flex justify-between items-center">
-                  <span className={`text-sm truncate pr-2 ${match.away_score > match.home_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
-                    {match.away_team}
-                  </span>
+                  <div className="flex items-center gap-2 truncate pr-2">
+                    <div className="w-6 h-6 rounded-full bg-bg-deep flex items-center justify-center border border-gray-700 overflow-hidden shrink-0">
+                      {match.away_logo ? (
+                        <img src={match.away_logo} alt={match.away_team} className="w-full h-full object-contain p-0.5" />
+                      ) : (
+                        <span className="text-[10px] font-bold text-gray-400">{match.away_team.charAt(0)}</span>
+                      )}
+                    </div>
+                    <span className={`text-sm ${match.away_score > match.home_score ? 'text-surface-white font-bold' : 'text-text-muted'}`}>
+                      {match.away_team}
+                    </span>
+                  </div>
                   <span className={`text-lg font-black ${match.away_score > match.home_score ? 'text-brand-green' : 'text-surface-white'}`}>
                     {match.away_score}
                   </span>
