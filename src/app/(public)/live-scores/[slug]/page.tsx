@@ -5,6 +5,85 @@ import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
+interface NormalizedStat {
+  label: string;
+  home: number | string;
+  away: number | string;
+  homePct: number;
+  awayPct: number;
+  suffix: string;
+}
+
+function parsePercent(val: unknown): number | null {
+  if (typeof val === "number" && !Number.isNaN(val)) return val;
+  if (typeof val === "string") {
+    const cleaned = parseFloat(val.replace("%", "").trim());
+    return Number.isNaN(cleaned) ? null : cleaned;
+  }
+  return null;
+}
+
+function normalizeStats(rawStats: unknown): NormalizedStat[] {
+  if (!rawStats) return [];
+
+  // If rawStats is an object (e.g., grouped by period or key-value map), flatten values
+  const items: any[] = Array.isArray(rawStats)
+    ? rawStats
+    : typeof rawStats === "object"
+    ? Object.values(rawStats).flatMap((v) => (Array.isArray(v) ? v : [v]))
+    : [];
+
+  return items
+    .filter((item) => item && typeof item === "object")
+    .map((stat: any) => {
+      const label =
+        stat.label ||
+        stat.name ||
+        stat.title ||
+        stat.type ||
+        stat.stat_name ||
+        "Stat";
+
+      const rawHome =
+        stat.home ?? stat.home_value ?? stat.home_total ?? stat.team_home ?? 0;
+      const rawAway =
+        stat.away ?? stat.away_value ?? stat.away_total ?? stat.team_away ?? 0;
+
+      const homeNum = parseFloat(String(rawHome).replace("%", "")) || 0;
+      const awayNum = parseFloat(String(rawAway).replace("%", "")) || 0;
+      const total = homeNum + awayNum;
+
+      const explicitHomePct =
+        parsePercent(stat.home_pct) ?? parsePercent(stat.homePct);
+      const explicitAwayPct =
+        parsePercent(stat.away_pct) ?? parsePercent(stat.awayPct);
+
+      let homePct = explicitHomePct ?? (total > 0 ? (homeNum / total) * 100 : 50);
+      let awayPct = explicitAwayPct ?? (total > 0 ? (awayNum / total) * 100 : 50);
+
+      // Clamp percentages cleanly between 0 and 100
+      homePct = Math.max(0, Math.min(100, homePct));
+      awayPct = Math.max(0, Math.min(100, awayPct));
+
+      const hasPercentSign =
+        String(rawHome).includes("%") || String(rawAway).includes("%");
+      const suffix =
+        stat.suffix ??
+        (hasPercentSign || String(label).toLowerCase().includes("possession")
+          ? "%"
+          : "");
+
+      return {
+        label: String(label),
+        home: rawHome,
+        away: rawAway,
+        homePct,
+        awayPct,
+        suffix,
+      };
+    });
+}
+
 // Sportsbook-style split statistic bar
 const StatBar = ({
   label,
@@ -13,33 +92,25 @@ const StatBar = ({
   homePct,
   awayPct,
   suffix,
-}: {
-  label: string;
-  home: number | string;
-  away: number | string;
-  homePct: number;
-  awayPct: number;
-  suffix: string;
-}) => {
-  const homeVal = Number(home) || 0;
-  const awayVal = Number(away) || 0;
+}: NormalizedStat) => {
+  const homeVal = parseFloat(String(home).replace("%", "")) || 0;
+  const awayVal = parseFloat(String(away).replace("%", "")) || 0;
   const homeLeading = homeVal > awayVal;
   const awayLeading = awayVal > homeVal;
-
-  const homeWidth = homePct || 50;
-  const awayWidth = awayPct || 50;
 
   return (
     <div className="py-2.5 border-b border-gray-700/50 last:border-none">
       <div className="flex justify-between items-center text-xs sm:text-sm font-bold mb-1.5 tabular-nums">
         <span className={homeLeading ? "text-brand-green" : "text-text-muted"}>
-          {homeVal}{suffix}
+          {homeVal}
+          {suffix}
         </span>
-        <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider">
+        <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider text-center px-2">
           {label}
         </span>
         <span className={awayLeading ? "text-brand-yellow" : "text-text-muted"}>
-          {awayVal}{suffix}
+          {awayVal}
+          {suffix}
         </span>
       </div>
 
@@ -48,13 +119,13 @@ const StatBar = ({
           className={`h-full transition-all duration-500 rounded-l-sm ${
             homeLeading ? "bg-brand-green" : "bg-gray-600"
           }`}
-          style={{ width: `${homeWidth}%` }}
+          style={{ width: `${homePct}%` }}
         />
         <div
           className={`h-full transition-all duration-500 rounded-r-sm ${
             awayLeading ? "bg-brand-yellow" : "bg-gray-600"
           }`}
-          style={{ width: `${awayWidth}%` }}
+          style={{ width: `${awayPct}%` }}
         />
       </div>
     </div>
@@ -80,23 +151,30 @@ export default async function MatchDetailsPage({
     notFound();
   }
 
-  // ✅ FIXED SLUG RECONSTRUCTION
-  let rawSlug = matchId.replace(/^-/, "").replace(/-$/, "");
+  // Slug reconstruction
+  const rawSlug = matchId.replace(/^-/, "").replace(/-$/, "");
   const matchSlug = rawSlug
     .replace(/^football-match-/, "")
     .replace(/-[^-]+$/, "");
 
   // Fetch Stats
-  let stats: any[] = [];
+  let stats: NormalizedStat[] = [];
   try {
-    // ✅ ADDED &include=stats TO FORCE FULL STATS PAYLOAD
     const res = await fetch(
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(matchSlug)}&include=stats`,
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
+        matchSlug
+      )}&include=stats`,
       { cache: "no-store" }
     );
     if (res.ok) {
       const json = await res.json();
-      stats = json.match?.stats || [];
+      const rawSource =
+        json.match?.stats ??
+        json.match?.statistics ??
+        json.stats ??
+        json.statistics ??
+        [];
+      stats = normalizeStats(rawSource);
     }
   } catch (error) {
     console.error("Failed to fetch match stats", error);
@@ -115,7 +193,6 @@ export default async function MatchDetailsPage({
   return (
     <div className="min-h-screen bg-bg-deep text-surface-white pt-4 pb-16 selection:bg-brand-green selection:text-white font-sans">
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-5">
-        
         {/* Top Navigation Bar */}
         <div className="flex items-center justify-between mb-4">
           <Link
@@ -132,14 +209,10 @@ export default async function MatchDetailsPage({
           </div>
         </div>
 
-        {/* Bet9ja-Inspired Live Scoreboard Card */}
+        {/* Scoreboard Card */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-2xl mb-5">
-          
-          {/* League & Live Status Header */}
           <div className="bg-bg-slate bg-gradient-to-r from-bg-deep/50 to-bg-slate px-4 py-2.5 border-b border-gray-700/50 flex justify-between items-center">
             <div className="flex items-center gap-2 truncate pr-2">
-              
-              {/* COUNTRY LOGO */}
               <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
                 {match.country_logo ? (
                   <img
@@ -157,7 +230,6 @@ export default async function MatchDetailsPage({
               </span>
             </div>
 
-            {/* Live Ticker Pill */}
             <div
               className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wide shrink-0 ${
                 isLive
@@ -174,10 +246,8 @@ export default async function MatchDetailsPage({
             </div>
           </div>
 
-          {/* Pitch / Scoreboard Arena */}
           <div className="relative p-5 sm:p-7 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-green/10 via-bg-slate to-bg-slate">
             <div className="grid grid-cols-3 items-center gap-2 sm:gap-4">
-              
               {/* Home Team */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 bg-bg-deep rounded-full flex items-center justify-center border border-gray-700/50 mb-2.5 p-2 shadow-lg">
@@ -258,20 +328,18 @@ export default async function MatchDetailsPage({
                   Away
                 </span>
               </div>
-
             </div>
           </div>
         </div>
 
         {/* Match Statistics Panel */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl">
-          
           <div className="bg-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 bg-brand-green rounded-full" />
               <BarChart2 className="text-brand-green w-4 h-4" />
               <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-surface-white">
-                Match Statistics
+                Match Statistics ({stats.length})
               </h3>
             </div>
 
@@ -298,16 +366,8 @@ export default async function MatchDetailsPage({
               </div>
             ) : (
               <div className="flex flex-col">
-                {stats.map((stat: any, index: number) => (
-                  <StatBar
-                    key={index}
-                    label={stat.label || "Stat"}
-                    home={stat.home}
-                    away={stat.away}
-                    homePct={stat.home_pct}
-                    awayPct={stat.away_pct}
-                    suffix={stat.suffix || ""}
-                  />
+                {stats.map((stat, index) => (
+                  <StatBar key={`${stat.label}-${index}`} {...stat} />
                 ))}
               </div>
             )}
@@ -327,7 +387,6 @@ export default async function MatchDetailsPage({
             </a>
           </p>
         </div>
-
       </div>
     </div>
   );
