@@ -58,9 +58,10 @@ export async function GET(request: Request) {
         return {
           id: matchId,
           league: match.competition || "Football",
+          // ✅ ADDED: Map the country logo
+          country_logo: match.country_logo || null,
           home_team: match.home || "Home",
           away_team: match.away || "Away",
-          // ✅ ADDED: Map the logos from SportScore
           home_logo: match.home_logo || null,
           away_logo: match.away_logo || null,
           home_score: Number(match.home_score) || 0,
