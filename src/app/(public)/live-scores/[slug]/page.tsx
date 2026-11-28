@@ -23,26 +23,11 @@ const StatBar = ({
 }) => {
   const homeVal = Number(home) || 0;
   const awayVal = Number(away) || 0;
-
   const homeLeading = homeVal > awayVal;
   const awayLeading = awayVal > homeVal;
 
-  // Calculate bar widths when percentages aren't provided
-  const total = homeVal + awayVal;
-
-  const homeWidth =
-    Number.isFinite(homePct) && homePct > 0
-      ? homePct
-      : total > 0
-        ? (homeVal / total) * 100
-        : 50;
-
-  const awayWidth =
-    Number.isFinite(awayPct) && awayPct > 0
-      ? awayPct
-      : total > 0
-        ? (awayVal / total) * 100
-        : 50;
+  const homeWidth = homePct || 50;
+  const awayWidth = awayPct || 50;
 
   return (
     <div className="py-2.5 border-b border-gray-700/50 last:border-none">
@@ -50,11 +35,9 @@ const StatBar = ({
         <span className={homeLeading ? "text-brand-green" : "text-text-muted"}>
           {homeVal}{suffix}
         </span>
-
         <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider">
           {label}
         </span>
-
         <span className={awayLeading ? "text-brand-yellow" : "text-text-muted"}>
           {awayVal}{suffix}
         </span>
@@ -67,7 +50,6 @@ const StatBar = ({
           }`}
           style={{ width: `${homeWidth}%` }}
         />
-
         <div
           className={`h-full transition-all duration-500 rounded-r-sm ${
             awayLeading ? "bg-brand-yellow" : "bg-gray-600"
@@ -88,21 +70,37 @@ export default async function MatchDetailsPage({
   const matchId = resolvedParams.slug;
 
   const supabase = await createClient();
-
-  const { data: match, error } = await supabase
+  const { data: match } = await supabase
     .from("live_scores")
     .select("*")
     .eq("id", matchId)
     .single();
 
-  if (error || !match) {
+  if (!match) {
     notFound();
   }
 
-  // Get ALL available match statistics directly from Supabase
-  const stats: any[] = Array.isArray(match.stats)
-    ? match.stats
-    : [];
+  // ✅ FIXED SLUG RECONSTRUCTION
+  let rawSlug = matchId.replace(/^-/, "").replace(/-$/, "");
+  const matchSlug = rawSlug
+    .replace(/^football-match-/, "")
+    .replace(/-[^-]+$/, "");
+
+  // Fetch Stats
+  let stats: any[] = [];
+  try {
+    // ✅ ADDED &include=stats TO FORCE FULL STATS PAYLOAD
+    const res = await fetch(
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(matchSlug)}&include=stats`,
+      { cache: "no-store" }
+    );
+    if (res.ok) {
+      const json = await res.json();
+      stats = json.match?.stats || [];
+    }
+  } catch (error) {
+    console.error("Failed to fetch match stats", error);
+  }
 
   const isFinished = match.minute === "FT";
   const isHalfTime = match.minute === "HT";
@@ -111,13 +109,13 @@ export default async function MatchDetailsPage({
   const statusBadgeText = isFinished
     ? "FT"
     : isHalfTime
-      ? "HT"
-      : `${match.minute}'`;
+    ? "HT"
+    : `${match.minute}'`;
 
   return (
     <div className="min-h-screen bg-bg-deep text-surface-white pt-4 pb-16 selection:bg-brand-green selection:text-white font-sans">
       <div className="w-full max-w-2xl mx-auto px-3 sm:px-5">
-
+        
         {/* Top Navigation Bar */}
         <div className="flex items-center justify-between mb-4">
           <Link
@@ -136,11 +134,11 @@ export default async function MatchDetailsPage({
 
         {/* Bet9ja-Inspired Live Scoreboard Card */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-2xl mb-5">
-
+          
           {/* League & Live Status Header */}
           <div className="bg-bg-slate bg-gradient-to-r from-bg-deep/50 to-bg-slate px-4 py-2.5 border-b border-gray-700/50 flex justify-between items-center">
             <div className="flex items-center gap-2 truncate pr-2">
-
+              
               {/* COUNTRY LOGO */}
               <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
                 {match.country_logo ? (
@@ -165,14 +163,13 @@ export default async function MatchDetailsPage({
                 isLive
                   ? "bg-brand-green/20 text-brand-green border border-brand-green/40"
                   : isHalfTime
-                    ? "bg-brand-yellow/15 text-brand-yellow border border-brand-yellow/30"
-                    : "bg-gray-800 text-text-muted border border-gray-700"
+                  ? "bg-brand-yellow/15 text-brand-yellow border border-brand-yellow/30"
+                  : "bg-gray-800 text-text-muted border border-gray-700"
               }`}
             >
               {isLive && (
                 <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-pulse" />
               )}
-
               <span>{isLive ? `LIVE • ${statusBadgeText}` : statusBadgeText}</span>
             </div>
           </div>
@@ -180,7 +177,7 @@ export default async function MatchDetailsPage({
           {/* Pitch / Scoreboard Arena */}
           <div className="relative p-5 sm:p-7 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-brand-green/10 via-bg-slate to-bg-slate">
             <div className="grid grid-cols-3 items-center gap-2 sm:gap-4">
-
+              
               {/* Home Team */}
               <div className="flex flex-col items-center text-center">
                 <div className="w-14 h-14 sm:w-16 sm:h-16 bg-bg-deep rounded-full flex items-center justify-center border border-gray-700/50 mb-2.5 p-2 shadow-lg">
@@ -196,11 +193,9 @@ export default async function MatchDetailsPage({
                     </span>
                   )}
                 </div>
-
                 <h1 className="text-xs sm:text-sm font-extrabold text-surface-white leading-snug line-clamp-2">
                   {match.home_team}
                 </h1>
-
                 <span className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mt-0.5">
                   Home
                 </span>
@@ -218,11 +213,9 @@ export default async function MatchDetailsPage({
                   >
                     {match.home_score}
                   </span>
-
                   <span className="text-text-muted text-xl sm:text-2xl font-bold">
                     -
                   </span>
-
                   <span
                     className={`text-3xl sm:text-4xl font-black ${
                       match.away_score > match.home_score
@@ -238,8 +231,8 @@ export default async function MatchDetailsPage({
                   {isFinished
                     ? "Full Time"
                     : isHalfTime
-                      ? "Half Time"
-                      : "In-Play"}
+                    ? "Half Time"
+                    : "In-Play"}
                 </span>
               </div>
 
@@ -258,11 +251,9 @@ export default async function MatchDetailsPage({
                     </span>
                   )}
                 </div>
-
                 <h2 className="text-xs sm:text-sm font-extrabold text-surface-white leading-snug line-clamp-2">
                   {match.away_team}
                 </h2>
-
                 <span className="text-[10px] uppercase tracking-wider text-text-muted font-semibold mt-0.5">
                   Away
                 </span>
@@ -274,13 +265,11 @@ export default async function MatchDetailsPage({
 
         {/* Match Statistics Panel */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl">
-
+          
           <div className="bg-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-1 h-4 bg-brand-green rounded-full" />
-
               <BarChart2 className="text-brand-green w-4 h-4" />
-
               <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-surface-white">
                 Match Statistics
               </h3>
@@ -290,7 +279,6 @@ export default async function MatchDetailsPage({
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-brand-green" /> Home
               </span>
-
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-brand-yellow" /> Away
               </span>
@@ -301,11 +289,9 @@ export default async function MatchDetailsPage({
             {stats.length === 0 ? (
               <div className="text-center py-8 bg-bg-deep/50 rounded-lg border border-gray-700/30">
                 <AlertCircle className="w-7 h-7 text-text-muted mx-auto mb-2" />
-
                 <p className="text-text-muted text-xs font-semibold">
                   Live match stats unavailable
                 </p>
-
                 <p className="text-gray-500 text-[11px] mt-0.5">
                   Data will appear automatically once kick-off begins.
                 </p>
@@ -314,12 +300,12 @@ export default async function MatchDetailsPage({
               <div className="flex flex-col">
                 {stats.map((stat: any, index: number) => (
                   <StatBar
-                    key={`${stat.label || "stat"}-${index}`}
+                    key={index}
                     label={stat.label || "Stat"}
-                    home={stat.home ?? 0}
-                    away={stat.away ?? 0}
-                    homePct={Number(stat.home_pct) || 0}
-                    awayPct={Number(stat.away_pct) || 0}
+                    home={stat.home}
+                    away={stat.away}
+                    homePct={stat.home_pct}
+                    awayPct={stat.away_pct}
                     suffix={stat.suffix || ""}
                   />
                 ))}
