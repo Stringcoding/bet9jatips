@@ -21,7 +21,7 @@ interface LiveMatch {
   updated_at?: string;
 }
 
-const POLL_INTERVAL_MS = 20000; // Refreshes from Supabase every 20s (0 external API calls)
+const POLL_INTERVAL_MS = 15000; // Checks Supabase every 15s (0 external API calls)
 
 export default function LiveScoreTicker() {
   const [matches, setMatches] = useState<LiveMatch[]>([]);
@@ -30,23 +30,26 @@ export default function LiveScoreTicker() {
   const router = useRouter();
 
   const fetchScores = useCallback(async () => {
-    const { data, error } = await supabase
-      .from("live_scores")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from("live_scores")
+        .select("*")
+        .order("updated_at", { ascending: false });
 
-    if (!error && data) {
-      setMatches(data);
+      if (!error && Array.isArray(data)) {
+        setMatches([...data]);
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [supabase]);
 
   useEffect(() => {
     fetchScores();
 
-    // 1. Instant updates via Supabase Realtime when cron updates `live_scores`
+    // Instant update when Supabase Realtime emits a change on `live_scores`
     const channel = supabase
-      .channel("live-score-ticker-changes")
+      .channel("live-score-ticker-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "live_scores" },
@@ -57,14 +60,14 @@ export default function LiveScoreTicker() {
       )
       .subscribe();
 
-    // 2. Fallback polling from Supabase every 20s
+    // Periodic refresh from Supabase so updates appear even if Realtime misses an event
     const interval = setInterval(() => {
       if (document.visibilityState === "visible") {
         fetchScores();
+        router.refresh();
       }
     }, POLL_INTERVAL_MS);
 
-    // 3. Refresh when user switches back to the tab
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         fetchScores();
@@ -133,7 +136,7 @@ export default function LiveScoreTicker() {
             return (
               <Link
                 href={`/live-scores/${match.id}`}
-                key={match.id}
+                key={`${match.id}-${match.minute}-${match.home_score}-${match.away_score}`}
                 className="shrink-0 w-[280px] bg-bg-slate border border-gray-700/50 rounded-xl p-4 flex flex-col gap-3 shadow-lg hover:border-brand-green/50 hover:shadow-brand transition-all cursor-pointer group"
               >
                 {/* League, Country Logo & Minute */}
