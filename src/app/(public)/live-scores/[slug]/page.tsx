@@ -10,34 +10,37 @@ const StatBar = ({
   label,
   home,
   away,
-  isPercentage = false,
+  homePct,
+  awayPct,
+  suffix,
 }: {
   label: string;
   home: number | string;
   away: number | string;
-  isPercentage?: boolean;
+  homePct: number;
+  awayPct: number;
+  suffix: string;
 }) => {
   const homeVal = Number(home) || 0;
   const awayVal = Number(away) || 0;
-  const total = homeVal + awayVal;
-
-  const homeWidth = total === 0 ? 50 : (homeVal / total) * 100;
-  const awayWidth = total === 0 ? 50 : (awayVal / total) * 100;
-
   const homeLeading = homeVal > awayVal;
   const awayLeading = awayVal > homeVal;
+
+  // Use the percentage provided by the API for the bar widths
+  const homeWidth = homePct || 50;
+  const awayWidth = awayPct || 50;
 
   return (
     <div className="py-2.5 border-b border-gray-700/50 last:border-none">
       <div className="flex justify-between items-center text-xs sm:text-sm font-bold mb-1.5 tabular-nums">
         <span className={homeLeading ? "text-brand-green" : "text-text-muted"}>
-          {isPercentage ? `${homeVal}%` : homeVal}
+          {homeVal}{suffix}
         </span>
         <span className="text-text-muted text-[11px] font-semibold uppercase tracking-wider">
           {label}
         </span>
         <span className={awayLeading ? "text-brand-yellow" : "text-text-muted"}>
-          {isPercentage ? `${awayVal}%` : awayVal}
+          {awayVal}{suffix}
         </span>
       </div>
 
@@ -93,7 +96,8 @@ export default async function MatchDetailsPage({
     );
     if (res.ok) {
       const json = await res.json();
-      stats = json.match?.stats || json.stats || [];
+      // ✅ CORRECTLY MAP THE STATS FROM THE API RESPONSE
+      stats = json.match?.stats || []; 
     }
   } catch (error) {
     console.error("Failed to fetch match stats", error);
@@ -284,27 +288,17 @@ export default async function MatchDetailsPage({
               </div>
             ) : (
               <div className="flex flex-col">
-                {stats.map((stat: any, index: number) => {
-                  const homeValue = stat.home || stat.home_value || 0;
-                  const awayValue = stat.away || stat.away_value || 0;
-                  const isPercentage =
-                    stat.name?.toLowerCase().includes("possession") ||
-                    stat.type?.toLowerCase().includes("possession");
-                  const label = stat.name || stat.type || "Stat";
-                  const formattedLabel = label
-                    .replace(/_/g, " ")
-                    .replace(/\b\w/g, (l: string) => l.toUpperCase());
-
-                  return (
-                    <StatBar
-                      key={index}
-                      label={formattedLabel}
-                      home={homeValue}
-                      away={awayValue}
-                      isPercentage={isPercentage}
-                    />
-                  );
-                })}
+                {stats.map((stat: any, index: number) => (
+                  <StatBar
+                    key={index}
+                    label={stat.label || "Stat"}
+                    home={stat.home}
+                    away={stat.away}
+                    homePct={stat.home_pct}
+                    awayPct={stat.away_pct}
+                    suffix={stat.suffix || ""}
+                  />
+                ))}
               </div>
             )}
           </div>
