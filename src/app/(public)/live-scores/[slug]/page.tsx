@@ -11,18 +11,17 @@ const StatBar = ({ label, home, away, isPercentage = false }: { label: string, h
   const awayVal = Number(away) || 0;
   const total = homeVal + awayVal;
   
-  // Calculate percentage widths for the bars
   const homeWidth = total === 0 ? 50 : (homeVal / total) * 100;
   const awayWidth = total === 0 ? 50 : (awayVal / total) * 100;
 
   return (
-    <div className="mb-6">
+    <div className="mb-4">
       <div className="flex justify-between items-center text-sm font-bold text-surface-white mb-2">
         <span>{isPercentage ? `${homeVal}%` : homeVal}</span>
-        <span className="text-text-muted text-xs uppercase tracking-wider">{label}</span>
+        <span className="text-text-muted text-[11px] uppercase tracking-wider">{label}</span>
         <span>{isPercentage ? `${awayVal}%` : awayVal}</span>
       </div>
-      <div className="flex h-2 w-full rounded-full overflow-hidden bg-bg-deep border border-gray-800">
+      <div className="flex h-1.5 w-full rounded-full overflow-hidden bg-bg-deep border border-gray-800">
         <div className="bg-brand-green h-full transition-all duration-500" style={{ width: `${homeWidth}%` }} />
         <div className="bg-brand-red/80 h-full transition-all duration-500" style={{ width: `${awayWidth}%` }} />
       </div>
@@ -34,7 +33,6 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
   const resolvedParams = await params;
   const matchId = resolvedParams.slug;
   
-  // 1. Get the match from Supabase
   const supabase = await createClient();
   const { data: match } = await supabase
     .from("live_scores")
@@ -46,20 +44,18 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
     notFound();
   }
 
-  // 2. Extract the original URL slug to fetch stats from SportScore
+  // Reconstruct slug for API
   let rawSlug = matchId.startsWith("-") ? matchId.substring(1) : matchId;
   rawSlug = rawSlug.endsWith("-") ? rawSlug.slice(0, -1) : rawSlug;
   const matchSlug = rawSlug.split("-football-match-")[1] || rawSlug;
 
-  // 3. Fetch Stats from SportScore API
+  // Fetch Stats
   let stats: any[] = [];
-  
   try {
     const res = await fetch(
       `https://sportscore.com/api/widget/match/?sport=football&slug=${matchSlug}`,
       { cache: "no-store" }
     );
-    
     if (res.ok) {
       const json = await res.json();
       stats = json.match?.stats || json.stats || [];
@@ -68,89 +64,96 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
     console.error("Failed to fetch match stats", error);
   }
 
+  // Fix HT display
+  const displayMinute = match.minute === "HT" ? "Half Time" : match.minute === "FT" ? "Full Time" : `Minute ${match.minute}`;
+
   return (
-    <div className="min-h-screen bg-bg-deep pt-8 pb-20">
-      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6">
+    <div className="min-h-screen bg-bg-deep pt-6 pb-16">
+      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6">
         
         <Link 
           href="/live-scores" 
-          className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-text-muted hover:text-surface-white mb-6 transition-colors text-sm"
         >
-          <ArrowLeft size={18} /> Back to Live Center
+          <ArrowLeft size={16} /> Back to Live Center
         </Link>
 
-        {/* Scoreboard Header */}
-        <div className="bg-bg-slate rounded-t-3xl border-t border-x border-gray-800 overflow-hidden shadow-2xl">
-          <div className="bg-bg-deep px-6 py-4 border-b border-gray-800 flex justify-between items-center">
-            <span className="text-brand-green font-bold uppercase tracking-wider text-sm flex items-center gap-2">
-              <Shield size={16} /> {match.league}
+        {/* Compact Scoreboard Header */}
+        <div className="bg-bg-slate rounded-2xl border border-gray-800 overflow-hidden shadow-xl mb-6">
+          
+          <div className="bg-bg-deep px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+            <span className="text-brand-green font-bold uppercase tracking-wider text-xs flex items-center gap-1.5">
+              <Shield size={14} /> {match.league}
             </span>
-            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border ${
-              match.minute === "FT" 
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold border ${
+              match.minute === "FT" || match.minute === "HT"
                 ? "bg-gray-800 text-gray-400 border-gray-700" 
                 : "bg-brand-red/10 text-brand-red border-brand-red/20"
             }`}>
-              {match.minute !== "FT" && <span className="w-2 h-2 rounded-full bg-brand-red animate-ping" />}
-              {match.minute === "FT" ? "FULL TIME" : "LIVE"}
+              {match.minute !== "FT" && match.minute !== "HT" && <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-ping" />}
+              {match.minute === "FT" ? "FULL TIME" : match.minute === "HT" ? "HALF TIME" : "LIVE"}
             </div>
           </div>
 
-          <div className="p-8 sm:p-12 flex flex-col items-center">
-            <div className="text-text-muted font-medium mb-6 flex items-center gap-2">
-              <Clock size={16} /> {match.minute === "FT" ? "Full Time" : `Minute ${match.minute}`}
+          <div className="p-6 flex flex-col items-center">
+            
+            <div className="text-text-muted text-xs font-medium mb-4 flex items-center gap-1.5 bg-bg-deep px-3 py-1 rounded-full">
+              <Clock size={12} /> {displayMinute}
             </div>
 
-            <div className="w-full flex items-center justify-between gap-4 sm:gap-8">
+            <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
+              
               {/* Home Team */}
               <div className="flex-1 flex flex-col items-center text-center">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg overflow-hidden p-2">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-bg-deep rounded-full flex items-center justify-center border-2 border-gray-700 mb-3 overflow-hidden p-1.5 shadow-inner">
                   {match.home_logo ? (
                     <img src={match.home_logo} alt={match.home_team} className="w-full h-full object-contain" />
                   ) : (
-                    <span className="text-2xl font-black text-gray-400">{match.home_team.charAt(0)}</span>
+                    <span className="text-lg font-black text-gray-400">{match.home_team.charAt(0)}</span>
                   )}
                 </div>
-                <h2 className="text-lg sm:text-2xl font-bold text-surface-white">{match.home_team}</h2>
+                <h2 className="text-sm sm:text-base font-bold text-surface-white leading-tight">{match.home_team}</h2>
               </div>
 
               {/* Score */}
-              <div className="flex flex-col items-center justify-center shrink-0">
-                <div className="text-5xl sm:text-7xl font-black text-surface-white flex items-center gap-4">
+              <div className="flex flex-col items-center justify-center shrink-0 px-2">
+                <div className="text-4xl sm:text-5xl font-black text-surface-white flex items-center gap-2">
                   <span className={match.home_score > match.away_score ? 'text-brand-green' : ''}>{match.home_score}</span>
-                  <span className="text-gray-600 text-3xl sm:text-5xl">:</span>
+                  <span className="text-gray-600 text-2xl">:</span>
                   <span className={match.away_score > match.home_score ? 'text-brand-green' : ''}>{match.away_score}</span>
                 </div>
               </div>
 
               {/* Away Team */}
               <div className="flex-1 flex flex-col items-center text-center">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg overflow-hidden p-2">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 bg-bg-deep rounded-full flex items-center justify-center border-2 border-gray-700 mb-3 overflow-hidden p-1.5 shadow-inner">
                   {match.away_logo ? (
                     <img src={match.away_logo} alt={match.away_team} className="w-full h-full object-contain" />
                   ) : (
-                    <span className="text-2xl font-black text-gray-400">{match.away_team.charAt(0)}</span>
+                    <span className="text-lg font-black text-gray-400">{match.away_team.charAt(0)}</span>
                   )}
                 </div>
-                <h2 className="text-lg sm:text-2xl font-bold text-surface-white">{match.away_team}</h2>
+                <h2 className="text-sm sm:text-base font-bold text-surface-white leading-tight">{match.away_team}</h2>
               </div>
+
             </div>
           </div>
         </div>
 
-        {/* Statistics Section */}
-        <div className="bg-bg-slate rounded-b-3xl border-b border-x border-gray-800 p-6 sm:p-8 shadow-2xl">
-          <div className="flex items-center gap-2 mb-8 border-b border-gray-800 pb-4">
-            <Activity className="text-brand-green w-5 h-5" />
-            <h3 className="text-xl font-bold text-surface-white">Match Statistics</h3>
+        {/* Compact Statistics Section */}
+        <div className="bg-bg-slate rounded-2xl border border-gray-800 p-5 sm:p-6 shadow-xl">
+          <div className="flex items-center gap-2 mb-6 border-b border-gray-800 pb-3">
+            <Activity className="text-brand-green w-4 h-4" />
+            <h3 className="text-base font-bold text-surface-white">Match Statistics</h3>
           </div>
 
           {stats.length === 0 ? (
-            <div className="text-center py-8">
-              <AlertCircle className="w-10 h-10 text-gray-600 mx-auto mb-3" />
-              <p className="text-text-muted text-sm">Statistics are not available for this match yet.</p>
+            <div className="text-center py-6">
+              <AlertCircle className="w-8 h-8 text-gray-600 mx-auto mb-2" />
+              <p className="text-text-muted text-xs">Statistics are not available for this match yet.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-1">
               {stats.map((stat: any, index: number) => {
                 const homeValue = stat.home || stat.home_value || 0;
                 const awayValue = stat.away || stat.away_value || 0;
@@ -172,9 +175,9 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
           )}
         </div>
 
-        {/* Footer Info */}
+        {/* Footer */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-text-muted">
+          <p className="text-xs text-text-muted">
             Stats provided by{" "}
             <a href="https://sportscore.com/" rel="dofollow" className="text-brand-green hover:underline">
               SportScore
