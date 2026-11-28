@@ -34,6 +34,7 @@ export default function LiveScoreTicker() {
       const { data, error } = await supabase
         .from("live_scores")
         .select("*")
+        .order("status", { ascending: true })
         .order("updated_at", { ascending: false });
 
       if (!error && Array.isArray(data)) {
@@ -128,8 +129,12 @@ export default function LiveScoreTicker() {
           {matches.map((match) => {
             const isFinished = match.minute === "FT";
             const isHalfTime = match.minute === "HT";
+            const isKickoffTime = String(match.minute).includes(":");
             const minuteLabel =
-              isFinished || isHalfTime || String(match.minute).endsWith("'")
+              isFinished ||
+              isHalfTime ||
+              isKickoffTime ||
+              String(match.minute).endsWith("'")
                 ? match.minute
                 : `${match.minute}'`;
 
@@ -160,6 +165,8 @@ export default function LiveScoreTicker() {
                     className={`flex items-center gap-1 font-bold px-1.5 py-0.5 rounded tabular-nums ${
                       isFinished
                         ? "text-text-muted bg-bg-deep"
+                        : isKickoffTime
+                        ? "text-brand-green bg-brand-green/10"
                         : "text-brand-yellow bg-brand-yellow/10"
                     }`}
                   >
