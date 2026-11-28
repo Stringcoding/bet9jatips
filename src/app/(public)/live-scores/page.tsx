@@ -8,16 +8,47 @@ import {
   Flame,
   CalendarClock,
 } from "lucide-react";
+import LiveScoresRefresher from "./LiveScoresRefresher";
 
 export const dynamic = "force-dynamic";
+
+function classifyMatchStatus(match: any) {
+  const minuteStr = String(match.minute || "").trim();
+  const statusStr = String(match.status || "").toLowerCase();
+
+  const isFinished =
+    minuteStr === "FT" || statusStr === "finished" || statusStr === "ended";
+  const isHalfTime = minuteStr === "HT" || statusStr === "halftime";
+  const isScheduled =
+    !isFinished &&
+    !isHalfTime &&
+    (statusStr === "scheduled" ||
+      minuteStr.includes(":") ||
+      minuteStr === "SOON");
+  const isLive = !isFinished && !isHalfTime && !isScheduled;
+
+  const formattedMinute =
+    isFinished || isHalfTime || isScheduled || minuteStr.endsWith("'")
+      ? minuteStr
+      : `${minuteStr}'`;
+
+  return {
+    isFinished,
+    isHalfTime,
+    isScheduled,
+    isLive,
+    formattedMinute,
+  };
+}
 
 export default async function LiveScoresPage() {
   const supabase = await createClient();
 
-  // Fetch all matches ordered by league then date
+  // Fetch all live + upcoming matches ordered by status (inplay first), league, then updated_at
   const { data: matches } = await supabase
     .from("live_scores")
     .select("*")
+    .order("status", { ascending: true })
     .order("league", { ascending: true })
     .order("updated_at", { ascending: false });
 
@@ -30,15 +61,33 @@ export default async function LiveScoresPage() {
     return acc;
   }, {});
 
-  const leagues = Object.keys(groupedMatches).sort();
-  const totalLiveCount = (matches || []).filter(
-    (m: any) => m.minute !== "FT"
+  // Sort leagues so competitions with live matches appear first, then alphabetically
+  const leagues = Object.keys(groupedMatches).sort((a, b) => {
+    const aHasLive = groupedMatches[a].some(
+      (m: any) => classifyMatchStatus(m).isLive || classifyMatchStatus(m).isHalfTime
+    );
+    const bHasLive = groupedMatches[b].some(
+      (m: any) => classifyMatchStatus(m).isLive || classifyMatchStatus(m).isHalfTime
+    );
+    if (aHasLive !== bHasLive) return aHasLive ? -1 : 1;
+    return a.localeCompare(b);
+  });
+
+  const totalLiveCount = (matches || []).filter((m: any) => {
+    const s = classifyMatchStatus(m);
+    return s.isLive || s.isHalfTime;
+  }).length;
+
+  const totalUpcomingCount = (matches || []).filter(
+    (m: any) => classifyMatchStatus(m).isScheduled
   ).length;
 
   return (
     <div className="min-h-screen bg-bg-deep text-surface-white pt-4 sm:pt-8 pb-20 selection:bg-brand-green selection:text-surface-white font-sans">
+      {/* Keeps the page synced automatically with Supabase Realtime without extra API calls */}
+      <LiveScoresRefresher />
+
       <div className="max-w-4xl mx-auto px-3 sm:px-6">
-        
         {/* Top Navigation & Live Summary Bar */}
         <div className="flex items-center justify-between mb-4">
           <Link
@@ -49,11 +98,21 @@ export default async function LiveScoresPage() {
             <span>Home</span>
           </Link>
 
-          <div className="flex items-center gap-2 bg-bg-slate border border-gray-700/50 px-3 py-1.5 rounded-lg">
-            <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
-            <span className="text-[11px] font-extrabold uppercase tracking-widest text-text-muted tabular-nums">
-              {totalLiveCount} Live Events
-            </span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-bg-slate border border-gray-700/50 px-3 py-1.5 rounded-lg">
+              <span className="w-2 h-2 rounded-full bg-brand-green animate-pulse" />
+              <span className="text-[11px] font-extrabold uppercase tracking-widest text-text-muted tabular-nums">
+                {totalLiveCount} Live
+              </span>
+            </div>
+
+            {totalUpcomingCount > 0 && (
+              <div className="flex items-center gap-1.5 bg-bg-slate border border-gray-700/50 px-3 py-1.5 rounded-lg">
+                <span className="text-[11px] font-extrabold uppercase tracking-widest text-brand-yellow tabular-nums">
+                  {totalUpcomingCount} Upcoming
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -62,7 +121,7 @@ export default async function LiveScoresPage() {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="bg-brand-green text-bg-deep text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded">
-                In-Play
+                In-Play &amp; Fixtures
               </span>
               <span className="text-xs font-bold text-brand-yellow tracking-wide flex items-center gap-1">
                 <Flame size={13} /> Real-Time Feed
@@ -96,17 +155,27 @@ export default async function LiveScoresPage() {
               <Radio className="w-6 h-6 text-brand-green animate-pulse" />
             </div>
             <h2 className="text-base sm:text-lg font-extrabold text-surface-white mb-1 tracking-tight">
-              No live matches at the moment
+              No live or upcoming matches right now
             </h2>
             <p className="text-text-muted text-xs sm:text-sm max-w-sm mx-auto">
-              Fixtures will populate automatically as soon as matches kick off.
+              Fixtures will populate automatically as soon as matches are scheduled or kick off.
             </p>
           </div>
         ) : (
           <div className="flex flex-col gap-5">
             {leagues.map((league) => {
-              const leagueMatches = groupedMatches[league];
-              // Get the country logo from the first match in the league (they are all the same)
+              // Sort matches inside each league: live/HT first, then upcoming by kickoff time
+              const leagueMatches = [...groupedMatches[league]].sort(
+                (a: any, b: any) => {
+                  const aStatus = classifyMatchStatus(a);
+                  const bStatus = classifyMatchStatus(b);
+                  const aRank = aStatus.isLive || aStatus.isHalfTime ? 0 : 1;
+                  const bRank = bStatus.isLive || bStatus.isHalfTime ? 0 : 1;
+                  if (aRank !== bRank) return aRank - bRank;
+                  return String(a.minute).localeCompare(String(b.minute));
+                }
+              );
+
               const countryLogo = leagueMatches[0]?.country_logo;
 
               return (
@@ -114,18 +183,17 @@ export default async function LiveScoresPage() {
                   key={league}
                   className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl"
                 >
-                  {/* Bet9ja-style League Strip Header */}
+                  {/* League Strip Header */}
                   <div className="bg-bg-slate px-3.5 sm:px-5 py-2.5 border-b border-gray-700/50 flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="w-1 h-4 bg-brand-green rounded-full shrink-0" />
-                      
-                      {/* REPLACED TROPHY WITH COUNTRY LOGO */}
+
                       <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
                         {countryLogo ? (
-                          <img 
-                            src={countryLogo} 
-                            alt="Flag" 
-                            className="w-full h-full object-cover" 
+                          <img
+                            src={countryLogo}
+                            alt="Flag"
+                            className="w-full h-full object-cover"
                           />
                         ) : (
                           <Trophy size={12} className="text-brand-yellow shrink-0" />
@@ -146,11 +214,18 @@ export default async function LiveScoresPage() {
                   {/* Match Rows */}
                   <div className="flex flex-col divide-y divide-gray-700/50">
                     {leagueMatches.map((match: any) => {
-                      const isFinished = match.minute === "FT";
-                      const isHalfTime = match.minute === "HT";
-                      const isLive = !isFinished && !isHalfTime;
-                      const homeWinning = match.home_score > match.away_score;
-                      const awayWinning = match.away_score > match.home_score;
+                      const {
+                        isFinished,
+                        isHalfTime,
+                        isScheduled,
+                        isLive,
+                        formattedMinute,
+                      } = classifyMatchStatus(match);
+
+                      const homeWinning =
+                        !isScheduled && match.home_score > match.away_score;
+                      const awayWinning =
+                        !isScheduled && match.away_score > match.home_score;
 
                       return (
                         <Link
@@ -158,16 +233,20 @@ export default async function LiveScoresPage() {
                           href={`/live-scores/${match.id}`}
                           className="flex items-center justify-between px-3.5 py-3 sm:px-5 sm:py-3.5 hover:bg-bg-deep/60 active:bg-bg-deep transition-colors group gap-3"
                         >
-                          {/* Left: Match Minute / Status Badge */}
-                          <div className="w-12 sm:w-14 shrink-0 flex flex-col items-center justify-center border-r border-gray-700/50 pr-2.5 sm:pr-3">
+                          {/* Left: Match Minute / Kickoff Time Badge */}
+                          <div className="w-14 sm:w-16 shrink-0 flex flex-col items-center justify-center border-r border-gray-700/50 pr-2.5 sm:pr-3">
                             {isLive ? (
                               <div className="flex items-center gap-1 text-brand-green font-extrabold text-xs tabular-nums">
                                 <span className="w-1.5 h-1.5 rounded-full bg-brand-green animate-ping" />
-                                <span>{match.minute}&apos;</span>
+                                <span>{formattedMinute}</span>
                               </div>
                             ) : isHalfTime ? (
                               <span className="text-[11px] font-extrabold text-brand-yellow bg-brand-yellow/10 border border-brand-yellow/30 px-1.5 py-0.5 rounded">
                                 HT
+                              </span>
+                            ) : isScheduled ? (
+                              <span className="text-[11px] font-extrabold text-brand-yellow bg-brand-yellow/10 border border-brand-yellow/25 px-1.5 py-0.5 rounded tabular-nums">
+                                {formattedMinute}
                               </span>
                             ) : (
                               <span className="text-[11px] font-bold text-text-muted bg-bg-deep px-1.5 py-0.5 rounded">
@@ -175,7 +254,13 @@ export default async function LiveScoresPage() {
                               </span>
                             )}
                             <span className="text-[9px] uppercase tracking-widest text-text-muted/70 font-semibold mt-1">
-                              {isLive ? "Live" : isHalfTime ? "Break" : "Ended"}
+                              {isLive
+                                ? "Live"
+                                : isHalfTime
+                                ? "Break"
+                                : isScheduled
+                                ? "Kickoff"
+                                : "Ended"}
                             </span>
                           </div>
 
@@ -200,6 +285,8 @@ export default async function LiveScoresPage() {
                                 className={`text-xs sm:text-sm truncate ${
                                   homeWinning
                                     ? "text-surface-white font-extrabold"
+                                    : isScheduled
+                                    ? "text-surface-white/90 font-semibold"
                                     : "text-text-muted font-medium"
                                 }`}
                               >
@@ -226,6 +313,8 @@ export default async function LiveScoresPage() {
                                 className={`text-xs sm:text-sm truncate ${
                                   awayWinning
                                     ? "text-surface-white font-extrabold"
+                                    : isScheduled
+                                    ? "text-surface-white/90 font-semibold"
                                     : "text-text-muted font-medium"
                                 }`}
                               >
@@ -241,30 +330,34 @@ export default async function LiveScoresPage() {
                                 className={`text-xs sm:text-sm font-black leading-tight ${
                                   homeWinning
                                     ? "text-brand-green"
+                                    : isScheduled
+                                    ? "text-text-muted"
                                     : isLive
                                     ? "text-surface-white"
                                     : "text-text-muted"
                                 }`}
                               >
-                                {match.home_score}
+                                {isScheduled ? "-" : match.home_score}
                               </span>
                               <div className="w-3 h-[1px] bg-gray-700/50 my-0.5" />
                               <span
                                 className={`text-xs sm:text-sm font-black leading-tight ${
                                   awayWinning
                                     ? "text-brand-yellow"
+                                    : isScheduled
+                                    ? "text-text-muted"
                                     : isLive
                                     ? "text-surface-white"
                                     : "text-text-muted"
                                 }`}
                               >
-                                {match.away_score}
+                                {isScheduled ? "-" : match.away_score}
                               </span>
                             </div>
 
                             <div className="flex items-center gap-1 text-gray-600 group-hover:text-brand-green transition-colors">
                               <span className="hidden md:inline text-[11px] font-bold uppercase tracking-widest">
-                                Stats
+                                {isScheduled ? "Preview" : "Stats"}
                               </span>
                               <ChevronRight
                                 size={18}
@@ -296,7 +389,6 @@ export default async function LiveScoresPage() {
             </a>
           </p>
         </div>
-
       </div>
     </div>
   );
