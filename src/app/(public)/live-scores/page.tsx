@@ -106,6 +106,8 @@ export default async function LiveScoresPage() {
           <div className="flex flex-col gap-5">
             {leagues.map((league) => {
               const leagueMatches = groupedMatches[league];
+              // Get the country logo from the first match in the league (they are all the same)
+              const countryLogo = leagueMatches[0]?.country_logo;
 
               return (
                 <div
@@ -116,7 +118,20 @@ export default async function LiveScoresPage() {
                   <div className="bg-bg-slate px-3.5 sm:px-5 py-2.5 border-b border-gray-700/50 flex items-center justify-between">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="w-1 h-4 bg-brand-green rounded-full shrink-0" />
-                      <Trophy size={14} className="text-brand-yellow shrink-0" />
+                      
+                      {/* REPLACED TROPHY WITH COUNTRY LOGO */}
+                      <div className="w-5 h-5 rounded-full bg-bg-deep border border-gray-700/50 flex items-center justify-center shrink-0 overflow-hidden">
+                        {countryLogo ? (
+                          <img 
+                            src={countryLogo} 
+                            alt="Flag" 
+                            className="w-full h-full object-cover" 
+                          />
+                        ) : (
+                          <Trophy size={12} className="text-brand-yellow shrink-0" />
+                        )}
+                      </div>
+
                       <h2 className="text-xs sm:text-sm font-extrabold uppercase tracking-widest text-surface-white truncate">
                         {league}
                       </h2>
