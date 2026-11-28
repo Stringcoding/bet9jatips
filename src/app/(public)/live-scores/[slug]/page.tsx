@@ -1,6 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Trophy, BarChart2, AlertCircle, Flame } from "lucide-react";
+import {
+  ArrowLeft,
+  Trophy,
+  BarChart2,
+  AlertCircle,
+  Flame,
+  Clock,
+  ArrowLeftRight,
+  Square,
+} from "lucide-react";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +21,18 @@ interface NormalizedStat {
   homePct: number;
   awayPct: number;
   suffix: string;
+}
+
+interface MatchIncident {
+  time?: number | string;
+  type?: string;
+  type_id?: number;
+  side?: "home" | "away" | string;
+  player?: string;
+  player_in?: string;
+  player_out?: string;
+  is_card?: boolean;
+  is_sub?: boolean;
 }
 
 function parsePercent(val: unknown): number | null {
@@ -26,7 +47,6 @@ function parsePercent(val: unknown): number | null {
 function normalizeStats(rawStats: unknown): NormalizedStat[] {
   if (!rawStats) return [];
 
-  // If rawStats is an object (e.g., grouped by period or key-value map), flatten values
   const items: any[] = Array.isArray(rawStats)
     ? rawStats
     : typeof rawStats === "object"
@@ -58,10 +78,11 @@ function normalizeStats(rawStats: unknown): NormalizedStat[] {
       const explicitAwayPct =
         parsePercent(stat.away_pct) ?? parsePercent(stat.awayPct);
 
-      let homePct = explicitHomePct ?? (total > 0 ? (homeNum / total) * 100 : 50);
-      let awayPct = explicitAwayPct ?? (total > 0 ? (awayNum / total) * 100 : 50);
+      let homePct =
+        explicitHomePct ?? (total > 0 ? (homeNum / total) * 100 : 50);
+      let awayPct =
+        explicitAwayPct ?? (total > 0 ? (awayNum / total) * 100 : 50);
 
-      // Clamp percentages cleanly between 0 and 100
       homePct = Math.max(0, Math.min(100, homePct));
       awayPct = Math.max(0, Math.min(100, awayPct));
 
@@ -82,6 +103,100 @@ function normalizeStats(rawStats: unknown): NormalizedStat[] {
         suffix,
       };
     });
+}
+
+function normalizeIncidents(rawIncidents: unknown): MatchIncident[] {
+  if (!Array.isArray(rawIncidents)) return [];
+
+  return rawIncidents
+    .filter((item) => item && typeof item === "object")
+    .map((inc: any) => ({
+      time: inc.time ?? "",
+      type: inc.type ?? "Event",
+      type_id: inc.type_id,
+      side: inc.side ?? "home",
+      player: inc.player ?? "",
+      player_in: inc.player_in ?? "",
+      player_out: inc.player_out ?? "",
+      is_card: Boolean(inc.is_card),
+      is_sub: Boolean(inc.is_sub),
+    }))
+    .sort((a, b) => (Number(a.time) || 0) - (Number(b.time) || 0));
+}
+
+function IncidentRow({
+  incident,
+  homeTeam,
+  awayTeam,
+}: {
+  incident: MatchIncident;
+  homeTeam: string;
+  awayTeam: string;
+}) {
+  const isAway = incident.side === "away";
+  const lowerType = (incident.type || "").toLowerCase();
+  const isRedCard =
+    lowerType.includes("red") || incident.type_id === 4 || incident.type_id === 5;
+  const isYellowCard =
+    incident.is_card || lowerType.includes("yellow") || incident.type_id === 3;
+  const isSub =
+    incident.is_sub || lowerType.includes("sub") || incident.type_id === 9;
+
+  const teamLabel = isAway ? awayTeam : homeTeam;
+
+  return (
+    <div className="flex items-center justify-between gap-3 py-2.5 px-3 rounded-lg bg-bg-deep/60 border border-gray-700/40">
+      <div className="flex items-center gap-2.5 min-w-0">
+        <span className="text-xs font-extrabold text-brand-green tabular-nums w-8 shrink-0">
+          {incident.time !== "" ? `${incident.time}'` : "--"}
+        </span>
+
+        {isSub ? (
+          <ArrowLeftRight className="w-4 h-4 text-sky-400 shrink-0" />
+        ) : isRedCard ? (
+          <Square className="w-4 h-4 text-red-500 fill-red-500 shrink-0" />
+        ) : isYellowCard ? (
+          <Square className="w-4 h-4 text-brand-yellow fill-brand-yellow shrink-0" />
+        ) : (
+          <Clock className="w-4 h-4 text-text-muted shrink-0" />
+        )}
+
+        <div className="min-w-0">
+          {isSub ? (
+            <div className="text-xs leading-snug">
+              {incident.player_in && (
+                <p className="font-bold text-brand-green truncate">
+                  IN: {incident.player_in}
+                </p>
+              )}
+              {incident.player_out && (
+                <p className="text-text-muted truncate">
+                  OUT: {incident.player_out}
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs font-bold text-surface-white truncate">
+              {incident.player || incident.type}
+            </p>
+          )}
+          <p className="text-[10px] text-text-muted uppercase tracking-wider mt-0.5">
+            {incident.type} • {teamLabel}
+          </p>
+        </div>
+      </div>
+
+      <span
+        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded shrink-0 ${
+          isAway
+            ? "bg-brand-yellow/15 text-brand-yellow border border-brand-yellow/30"
+            : "bg-brand-green/15 text-brand-green border border-brand-green/30"
+        }`}
+      >
+        {isAway ? "Away" : "Home"}
+      </span>
+    </div>
+  );
 }
 
 // Sportsbook-style split statistic bar
@@ -157,8 +272,10 @@ export default async function MatchDetailsPage({
     .replace(/^football-match-/, "")
     .replace(/-[^-]+$/, "");
 
-  // Fetch Stats
   let stats: NormalizedStat[] = [];
+  let incidents: MatchIncident[] = [];
+  let roundLabel: string | null = null;
+
   try {
     const res = await fetch(
       `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
@@ -175,9 +292,11 @@ export default async function MatchDetailsPage({
         json.statistics ??
         [];
       stats = normalizeStats(rawSource);
+      incidents = normalizeIncidents(json.match?.incidents ?? json.incidents);
+      roundLabel = json.match?.round ?? null;
     }
   } catch (error) {
-    console.error("Failed to fetch match stats", error);
+    console.error("Failed to fetch match details", error);
   }
 
   const isFinished = match.minute === "FT";
@@ -227,6 +346,7 @@ export default async function MatchDetailsPage({
 
               <span className="text-surface-white font-bold uppercase tracking-wider text-[11px] sm:text-xs truncate">
                 {match.league}
+                {roundLabel ? ` • ${roundLabel}` : ""}
               </span>
             </div>
 
@@ -332,6 +452,40 @@ export default async function MatchDetailsPage({
           </div>
         </div>
 
+        {/* Match Incidents / Timeline Panel */}
+        <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl mb-5">
+          <div className="bg-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-4 bg-brand-yellow rounded-full" />
+              <Clock className="text-brand-yellow w-4 h-4" />
+              <h3 className="text-xs sm:text-sm font-extrabold uppercase tracking-wider text-surface-white">
+                Match Incidents ({incidents.length})
+              </h3>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5">
+            {incidents.length === 0 ? (
+              <div className="text-center py-6 bg-bg-deep/50 rounded-lg border border-gray-700/30">
+                <p className="text-text-muted text-xs font-semibold">
+                  No match incidents recorded yet
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                {incidents.map((incident, index) => (
+                  <IncidentRow
+                    key={`${incident.time}-${incident.type}-${index}`}
+                    incident={incident}
+                    homeTeam={match.home_team}
+                    awayTeam={match.away_team}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Match Statistics Panel */}
         <div className="bg-bg-slate rounded-xl border border-gray-700/50 overflow-hidden shadow-xl">
           <div className="bg-bg-slate px-4 py-3 border-b border-gray-700/50 flex items-center justify-between">
@@ -361,7 +515,7 @@ export default async function MatchDetailsPage({
                   Live match stats unavailable
                 </p>
                 <p className="text-gray-500 text-[11px] mt-0.5">
-                  Data will appear automatically once kick-off begins.
+                  This feed does not return detailed match stats for this fixture.
                 </p>
               </div>
             ) : (
