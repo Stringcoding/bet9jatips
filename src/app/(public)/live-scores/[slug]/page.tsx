@@ -1,11 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { ArrowLeft, Clock, Shield, Activity, Target, Flag, AlertCircle } from "lucide-react";
+import { ArrowLeft, Clock, Shield, Activity, AlertCircle } from "lucide-react";
 import { notFound } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-// Helper to format percentage
+// Helper component to draw the statistic bars
 const StatBar = ({ label, home, away, isPercentage = false }: { label: string, home: number | string, away: number | string, isPercentage?: boolean }) => {
   const homeVal = Number(home) || 0;
   const awayVal = Number(away) || 0;
@@ -23,16 +23,8 @@ const StatBar = ({ label, home, away, isPercentage = false }: { label: string, h
         <span>{isPercentage ? `${awayVal}%` : awayVal}</span>
       </div>
       <div className="flex h-2 w-full rounded-full overflow-hidden bg-bg-deep border border-gray-800">
-        {/* Home Bar */}
-        <div 
-          className="bg-brand-green h-full transition-all duration-500" 
-          style={{ width: `${homeWidth}%` }} 
-        />
-        {/* Away Bar */}
-        <div 
-          className="bg-brand-red/80 h-full transition-all duration-500" 
-          style={{ width: `${awayWidth}%` }} 
-        />
+        <div className="bg-brand-green h-full transition-all duration-500" style={{ width: `${homeWidth}%` }} />
+        <div className="bg-brand-red/80 h-full transition-all duration-500" style={{ width: `${awayWidth}%` }} />
       </div>
     </div>
   );
@@ -55,18 +47,12 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
   }
 
   // 2. Extract the original URL slug to fetch stats from SportScore
-  // Our database ID is the URL with slashes replaced by dashes. We need to reverse it to fetch stats.
-  // Alternatively, if you saved the raw URL, you can use that. We'll reconstruct it here.
-  // Example: -football-match-diriangen-vs-matagalpa-fc-3glrw7h41k74qdy-
   let rawSlug = matchId.startsWith("-") ? matchId.substring(1) : matchId;
   rawSlug = rawSlug.endsWith("-") ? rawSlug.slice(0, -1) : rawSlug;
-  
-  // Extract only the final part of the slug (e.g., "manchester-united-vs-liverpool")
   const matchSlug = rawSlug.split("-football-match-")[1] || rawSlug;
 
   // 3. Fetch Stats from SportScore API
   let stats: any[] = [];
-  let events: any[] = [];
   
   try {
     const res = await fetch(
@@ -76,9 +62,7 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
     
     if (res.ok) {
       const json = await res.json();
-      // SportScore returns stats in different possible keys depending on the match state
       stats = json.match?.stats || json.stats || [];
-      events = json.match?.events || json.events || [];
     }
   } catch (error) {
     console.error("Failed to fetch match stats", error);
@@ -117,10 +101,14 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
             </div>
 
             <div className="w-full flex items-center justify-between gap-4 sm:gap-8">
-              {/* Home */}
+              {/* Home Team */}
               <div className="flex-1 flex flex-col items-center text-center">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg">
-                  <span className="text-2xl font-black text-gray-400">{match.home_team.charAt(0)}</span>
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg overflow-hidden p-2">
+                  {match.home_logo ? (
+                    <img src={match.home_logo} alt={match.home_team} className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="text-2xl font-black text-gray-400">{match.home_team.charAt(0)}</span>
+                  )}
                 </div>
                 <h2 className="text-lg sm:text-2xl font-bold text-surface-white">{match.home_team}</h2>
               </div>
@@ -134,10 +122,14 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
                 </div>
               </div>
 
-              {/* Away */}
+              {/* Away Team */}
               <div className="flex-1 flex flex-col items-center text-center">
-                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg">
-                  <span className="text-2xl font-black text-gray-400">{match.away_team.charAt(0)}</span>
+                <div className="w-20 h-20 sm:w-24 sm:h-24 bg-bg-deep rounded-full flex items-center justify-center border-4 border-gray-700 mb-4 shadow-lg overflow-hidden p-2">
+                  {match.away_logo ? (
+                    <img src={match.away_logo} alt={match.away_team} className="w-full h-full object-contain" />
+                  ) : (
+                    <span className="text-2xl font-black text-gray-400">{match.away_team.charAt(0)}</span>
+                  )}
                 </div>
                 <h2 className="text-lg sm:text-2xl font-bold text-surface-white">{match.away_team}</h2>
               </div>
@@ -159,17 +151,10 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-              
-              {/* Map through the stats we get from the API */}
               {stats.map((stat: any, index: number) => {
-                // Safely extract home and away values
                 const homeValue = stat.home || stat.home_value || 0;
                 const awayValue = stat.away || stat.away_value || 0;
-                
-                // Check if the stat is a percentage (like possession)
                 const isPercentage = stat.name?.toLowerCase().includes("possession") || stat.type?.toLowerCase().includes("possession");
-                
-                // Clean up label (e.g., "ball_possession" -> "Ball Possession")
                 const label = stat.name || stat.type || "Stat";
                 const formattedLabel = label.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
 
@@ -183,14 +168,6 @@ export default async function MatchDetailsPage({ params }: { params: Promise<{ s
                   />
                 );
               })}
-
-              {/* Fallback if API sends specific known stat keys but our generic mapping misses them */}
-              {stats.length > 0 && !stats.find((s:any) => s.name === "Ball Possession") && (
-                 <>
-                   {/* You can manually map more stats here if SportScore changes their structure */}
-                 </>
-              )}
-
             </div>
           )}
         </div>
